@@ -58,4 +58,4 @@ See the [contributing.md](/CONTRIBUTING.md) guide for details on how to contribu
 
 ## License
 
-[MIT](https://github.com/automator-com/datamaker-py/blob/main/LICENSE)
+[MIT](https://github.com/automators-com/datamaker-py/blob/main/LICENSE)
