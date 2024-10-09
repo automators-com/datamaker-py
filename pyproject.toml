@@ -1,0 +1,10 @@
+[project]
+name = "datamaker-py"
+version = "0.1.0"
+description = "The official Python client for the Datamaker API."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+]
