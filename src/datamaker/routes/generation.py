@@ -8,7 +8,7 @@ class GenerationClient(BaseClient):
         """Generate data using a template."""
         response = self._make_request(
             "POST",
-            "/datamaker",
+            "/generate/template",
             json=template.to_dict() if hasattr(template, 'to_dict') else template,
         )
         return response.json()
