@@ -1,5 +1,4 @@
-from src.main import DataMaker
-from src.template import Template
+from src.datamaker import DataMaker, Template
 
 # Create an instance of DataMaker
 datamaker = DataMaker()
