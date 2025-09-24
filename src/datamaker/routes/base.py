@@ -18,7 +18,7 @@ class BaseClient:
             
         self.api_key = api_key or os.getenv("DATAMAKER_API_KEY")
         self.headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "X-API-Key": self.api_key,
             **(default_headers or {}),
         }
         self.base_url = base_url

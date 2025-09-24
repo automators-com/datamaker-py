@@ -5,11 +5,9 @@ from typing import Optional, Dict, List
 class CustomDataTypesClient(BaseClient):
     """Client for custom data type management operations."""
     
-    def get_custom_data_types(self, project_id: Optional[str] = None) -> List[Dict]:
-        """Get all custom data types."""
-        params = {}
-        if project_id:
-            params["projectId"] = project_id
+    def get_custom_data_types(self, project_id: str) -> List[Dict]:
+        """Get all custom data types for a specific project."""
+        params = {"projectId": project_id}
         response = self._make_request("GET", "/customDataTypes", params=params)
         return response.json()
     

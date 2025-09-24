@@ -72,9 +72,9 @@ class DataMaker:
         """Fetch all templates from the API."""
         return self._templates.get_templates()
     
-    def create_template(self, template_data: Dict):
+    def create_template(self, template_data: Dict, project_id: str, team_id: str):
         """Create a new template."""
-        return self._templates.create_template(template_data)
+        return self._templates.create_template(template_data, project_id, team_id)
     
     def get_template(self, template_id: str):
         """Get a specific template by ID."""
@@ -93,9 +93,9 @@ class DataMaker:
         """Get all API keys."""
         return self._api_keys.get_api_keys()
     
-    def create_api_key(self, key: str, name: Optional[str] = None, team_id: Optional[str] = None):
+    def create_api_key(self, key: str, scope: str, name: Optional[str] = None, team_id: Optional[str] = None):
         """Create a new API key."""
-        return self._api_keys.create_api_key(key, name, team_id)
+        return self._api_keys.create_api_key(key, scope, name, team_id)
     
     def update_api_key(self, key_id: str, key: str, name: Optional[str] = None, team_id: Optional[str] = None):
         """Update an API key."""
@@ -139,9 +139,9 @@ class DataMaker:
         """Get all projects."""
         return self._projects.get_projects()
     
-    def create_project(self, project_data: Dict):
+    def create_project(self, project_data: Dict, team_id: str):
         """Create a new project."""
-        return self._projects.create_project(project_data)
+        return self._projects.create_project(project_data, team_id)
     
     def get_project(self, project_id: str):
         """Get a specific project by ID."""
@@ -160,9 +160,9 @@ class DataMaker:
         """Get all users."""
         return self._users.get_users()
     
-    def create_user(self, user_data: Dict):
+    def create_user(self, user_data: Dict, user_id: str):
         """Create a new user."""
-        return self._users.create_user(user_data)
+        return self._users.create_user(user_data, user_id)
     
     def get_current_user(self):
         """Get current user information."""
@@ -227,8 +227,8 @@ class DataMaker:
         return self._team_members.remove_team_member(member_id)
 
     # =================== CUSTOM DATA TYPE METHODS ===================
-    def get_custom_data_types(self, project_id: Optional[str] = None):
-        """Get all custom data types."""
+    def get_custom_data_types(self, project_id: str):
+        """Get all custom data types for a specific project."""
         return self._custom_data_types.get_custom_data_types(project_id)
     
     def create_custom_data_type(self, data_type_data: Dict):

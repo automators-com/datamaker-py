@@ -10,8 +10,10 @@ class UsersClient(BaseClient):
         response = self._make_request("GET", "/users")
         return response.json()
     
-    def create_user(self, user_data: Dict) -> Dict:
+    def create_user(self, user_data: Dict, user_id: str) -> Dict:
         """Create a new user."""
+        # Ensure required id is present
+        user_data["id"] = user_id
         response = self._make_request("POST", "/users", json=user_data)
         return response.json()
     

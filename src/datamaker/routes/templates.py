@@ -11,8 +11,18 @@ class TemplatesClient(BaseClient):
         response = self._make_request("GET", "/templates")
         return response.json()
     
-    def create_template(self, template_data: Dict) -> Dict:
+    def create_template(self, template_data: Dict, project_id: str, team_id: str) -> Dict:
         """Create a new template."""
+        # Ensure required fields are present
+        template_data["projectId"] = project_id
+        template_data["teamId"] = team_id
+        
+        # Ensure all fields have the 'active' property set to True by default
+        if "fields" in template_data:
+            for field in template_data["fields"]:
+                if "active" not in field:
+                    field["active"] = True
+        
         response = self._make_request("POST", "/templates", json=template_data)
         return response.json()
     

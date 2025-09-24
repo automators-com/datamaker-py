@@ -10,8 +10,10 @@ class ProjectsClient(BaseClient):
         response = self._make_request("GET", "/projects")
         return response.json()
     
-    def create_project(self, project_data: Dict) -> Dict:
+    def create_project(self, project_data: Dict, team_id: str) -> Dict:
         """Create a new project."""
+        # Ensure required teamId is present
+        project_data["teamId"] = team_id
         response = self._make_request("POST", "/projects", json=project_data)
         return response.json()
     

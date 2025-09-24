@@ -10,10 +10,13 @@ class ApiKeysClient(BaseClient):
         response = self._make_request("GET", "/apiKeys")
         return response.json()
     
-    def create_api_key(self, key: str, name: Optional[str] = None, 
+    def create_api_key(self, key: str, scope: str, name: Optional[str] = None, 
                       team_id: Optional[str] = None) -> Dict:
         """Create a new API key."""
-        data = {"key": key}
+        data = {
+            "key": key,
+            "scope": scope
+        }
         if name:
             data["name"] = name
         if team_id:
