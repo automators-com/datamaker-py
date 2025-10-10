@@ -81,7 +81,10 @@ class Template:
     def to_dict(self):
         return {
             "name": self.name,
-            "fields": [field.__dict__ if hasattr(field, '__dict__') else field for field in self.fields],
+            "fields": [
+                field.__dict__ if hasattr(field, "__dict__") else field
+                for field in self.fields
+            ],
             "quantity": self.quantity,
         }
 

@@ -11,9 +11,13 @@ class TestDataMakerIntegration:
     def _handle_api_error(self, error, test_name):
         """Handle API errors gracefully."""
         if "Unauthorized" in str(error):
-            pytest.skip(f"{test_name} skipped: API key appears to be invalid or expired: {error}")
+            pytest.skip(
+                f"{test_name} skipped: API key appears to be invalid or expired: {error}"
+            )
         elif "Internal Server Error" in str(error):
-            pytest.skip(f"{test_name} skipped: API key format recognized but server error: {error}")
+            pytest.skip(
+                f"{test_name} skipped: API key format recognized but server error: {error}"
+            )
         else:
             pytest.fail(f"{test_name} failed: {error}")
 
@@ -197,18 +201,18 @@ class TestDataMakerIntegration:
         try:
             # First get templates
             templates = datamaker_client.get_templates()
-            
+
             if not templates:
                 pytest.skip("No templates available for testing")
-            
+
             # Use the first template for testing
             template = templates[0]
             template["quantity"] = 2  # Generate only 2 records for testing
-            
+
             result = datamaker_client.generate(template)
             assert result is not None
             print(f"Generated data: {result}")
-            
+
         except DataMakerError as e:
             self._handle_api_error(e, "Data generation")
 
@@ -217,17 +221,17 @@ class TestDataMakerIntegration:
         try:
             # First get templates
             templates = datamaker_client.get_templates()
-            
+
             if not templates:
                 pytest.skip("No templates available for testing")
-            
+
             # Use the first template ID for testing
             template_id = templates[0]["id"]
-            
+
             result = datamaker_client.generate_from_template_id(template_id, quantity=2)
             assert result is not None
             print(f"Generated data from template ID {template_id}: {result}")
-            
+
         except DataMakerError as e:
             self._handle_api_error(e, "Generate from template ID")
 
@@ -240,27 +244,29 @@ class TestDataMakerIntegration:
                 "fields": [
                     {"name": "firstName", "type": "firstName"},
                     {"name": "lastName", "type": "lastName"},
-                    {"name": "email", "type": "email"}
+                    {"name": "email", "type": "email"},
                 ],
-                "quantity": 5
+                "quantity": 5,
             }
-            
+
             # Use sample project and team IDs from the API
             project_id = "cmd33tl160003xkrc6f4au69w"
             team_id = "cmd33tl0m0000xkrcmo8nxkwz"
-            created_template = datamaker_client.create_template(template_data, project_id, team_id)
+            created_template = datamaker_client.create_template(
+                template_data, project_id, team_id
+            )
             assert created_template is not None
             assert "id" in created_template
             template_id = created_template["id"]
-            
+
             print(f"Created template with ID: {template_id}")
-            
+
             # Clean up - delete the template
             delete_result = datamaker_client.delete_template(template_id)
             assert delete_result is not None
-            
+
             print(f"Successfully deleted template {template_id}")
-            
+
         except DataMakerError as e:
             self._handle_api_error(e, "Create/delete template test")
 
@@ -270,24 +276,24 @@ class TestDataMakerIntegration:
             # Create a test project
             project_data = {
                 "name": "Test Project for Integration Test",
-                "description": "A test project created during integration testing"
+                "description": "A test project created during integration testing",
             }
-            
+
             # Use sample team ID from the API
             team_id = "cmd33tl0m0000xkrcmo8nxkwz"
             created_project = datamaker_client.create_project(project_data, team_id)
             assert created_project is not None
             assert "id" in created_project
             project_id = created_project["id"]
-            
+
             print(f"Created project with ID: {project_id}")
-            
+
             # Clean up - delete the project
             delete_result = datamaker_client.delete_project(project_id)
             assert delete_result is not None
-            
+
             print(f"Successfully deleted project {project_id}")
-            
+
         except DataMakerError as e:
             self._handle_api_error(e, "Create/delete project test")
 
@@ -297,22 +303,22 @@ class TestDataMakerIntegration:
             # Create a test team
             team_data = {
                 "name": "Test Team for Integration Test",
-                "description": "A test team created during integration testing"
+                "description": "A test team created during integration testing",
             }
-            
+
             created_team = datamaker_client.create_team(team_data)
             assert created_team is not None
             assert "id" in created_team
             team_id = created_team["id"]
-            
+
             print(f"Created team with ID: {team_id}")
-            
+
             # Clean up - delete the team
             delete_result = datamaker_client.delete_team(team_id)
             assert delete_result is not None
-            
+
             print(f"Successfully deleted team {team_id}")
-            
+
         except DataMakerError as e:
             self._handle_api_error(e, "Create/delete team test")
 
@@ -323,25 +329,26 @@ class TestDataMakerIntegration:
             user_data = {
                 "email": "testuser@integrationtest.com",
                 "firstName": "Test",
-                "lastName": "User"
+                "lastName": "User",
             }
-            
+
             # Generate a unique user ID for the test
             import uuid
+
             user_id = f"test-user-{uuid.uuid4().hex[:8]}"
             created_user = datamaker_client.create_user(user_data, user_id)
             assert created_user is not None
             assert "id" in created_user
             user_id = created_user["id"]
-            
+
             print(f"Created user with ID: {user_id}")
-            
+
             # Clean up - delete the user
             delete_result = datamaker_client.delete_user(user_id)
             assert delete_result is not None
-            
+
             print(f"Successfully deleted user {user_id}")
-            
+
         except DataMakerError as e:
             self._handle_api_error(e, "Create/delete user test")
 
@@ -351,10 +358,10 @@ class TestDataMakerIntegration:
             # First get projects and teams for the connection
             projects = datamaker_client.get_projects()
             teams = datamaker_client.get_teams()
-            
+
             if not projects or not teams:
                 pytest.skip("No projects or teams available for connection testing")
-            
+
             # Create a test connection
             connection_data = {
                 "name": "Test Connection for Integration Test",
@@ -362,22 +369,22 @@ class TestDataMakerIntegration:
                 "connection_string": "postgresql://test:test@localhost:5432/testdb",
                 "created_by": "test-user",
                 "project_id": projects[0]["id"],
-                "team_id": teams[0]["id"]
+                "team_id": teams[0]["id"],
             }
-            
+
             created_connection = datamaker_client.create_connection(**connection_data)
             assert created_connection is not None
             assert "id" in created_connection
             connection_id = created_connection["id"]
-            
+
             print(f"Created connection with ID: {connection_id}")
-            
+
             # Clean up - delete the connection
             delete_result = datamaker_client.delete_connection(connection_id)
             assert delete_result is not None
-            
+
             print(f"Successfully deleted connection {connection_id}")
-            
+
         except DataMakerError as e:
             self._handle_api_error(e, "Create/delete connection test")
 
@@ -387,13 +394,13 @@ class TestDataMakerIntegration:
             # Test connection data
             connection_data = {
                 "type": "postgresql",
-                "connectionString": "postgresql://test:test@localhost:5432/testdb"
+                "connectionString": "postgresql://test:test@localhost:5432/testdb",
             }
-            
+
             result = datamaker_client.test_connection(connection_data)
             assert result is not None
             print(f"Connection test result: {result}")
-            
+
         except DataMakerError as e:
             # This might fail if the connection string is invalid, which is expected
             print(f"Connection test failed as expected: {e}")
@@ -404,23 +411,23 @@ class TestDataMakerIntegration:
             # Create a test API key
             api_key_data = {
                 "key": "test-api-key-for-integration-test",
-                "name": "Test API Key for Integration Test"
+                "name": "Test API Key for Integration Test",
             }
-            
+
             # Add required scope field
             api_key_data["scope"] = "user"
             created_api_key = datamaker_client.create_api_key(**api_key_data)
             assert created_api_key is not None
             assert "id" in created_api_key
             api_key_id = created_api_key["id"]
-            
+
             print(f"Created API key with ID: {api_key_id}")
-            
+
             # Clean up - delete the API key
             delete_result = datamaker_client.delete_api_key(api_key_id)
             assert delete_result is not None
-            
+
             print(f"Successfully deleted API key {api_key_id}")
-            
+
         except DataMakerError as e:
             self._handle_api_error(e, "Create/delete API key test")

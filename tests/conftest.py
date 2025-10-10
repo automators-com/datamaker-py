@@ -45,9 +45,9 @@ def sample_template():
         "fields": [
             {"name": "firstName", "type": "firstName"},
             {"name": "lastName", "type": "lastName"},
-            {"name": "email", "type": "email"}
+            {"name": "email", "type": "email"},
         ],
-        "quantity": 10
+        "quantity": 10,
     }
 
 
@@ -57,7 +57,7 @@ def sample_project():
     return {
         "id": "test-project-123",
         "name": "Test Project",
-        "description": "A test project"
+        "description": "A test project",
     }
 
 
@@ -68,18 +68,14 @@ def sample_user():
         "id": "test-user-123",
         "email": "test@example.com",
         "firstName": "Test",
-        "lastName": "User"
+        "lastName": "User",
     }
 
 
 @pytest.fixture
 def sample_team():
     """Sample team fixture."""
-    return {
-        "id": "test-team-123",
-        "name": "Test Team",
-        "description": "A test team"
-    }
+    return {"id": "test-team-123", "name": "Test Team", "description": "A test team"}
 
 
 @pytest.fixture
@@ -92,5 +88,5 @@ def sample_connection():
         "connectionString": "postgresql://user:pass@localhost:5432/testdb",
         "createdBy": "test-user-123",
         "projectId": "test-project-123",
-        "teamId": "test-team-123"
+        "teamId": "test-team-123",
     }
