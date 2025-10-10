@@ -1,17 +1,17 @@
 # DataMaker
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v1.json)](https://github.com/charliermarsh/ruff)
 
-## What is it?
-
-The official Python library for the datamaker API. Datamaker assists with generating realistic relational data for testing and development purposes.
+The official Python library for the Automators DataMaker API.
 
 ## Installation
 
-Package name TBD
+You can install the package using pip:
 
 ```sh
-pip install datamaker
+pip install datamaker-py
 ```
 
 ## Quick start
@@ -19,8 +19,7 @@ pip install datamaker
 Basic example:
 
 ```python
-from src.main import DataMaker
-from src.template import Template
+from datamaker import DataMaker, Template
 
 # Create an instance of DataMaker
 datamaker = DataMaker()
@@ -55,7 +54,3 @@ if __name__ == "__main__":
 ## Development & Contibutions
 
 See the [contributing.md](/CONTRIBUTING.md) guide for details on how to contribute to this project.
-
-## License
-
-[MIT](https://github.com/automators-com/datamaker-py/blob/main/LICENSE)
