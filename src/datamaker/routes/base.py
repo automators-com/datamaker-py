@@ -11,7 +11,7 @@ class BaseClient:
         self,
         api_key: str = None,
         default_headers: Dict[str, Optional[str]] = None,
-        base_url: Optional[str] = "https://api.datamaker.automators.com",
+        base_url: Optional[str] = None,
     ):
         if default_headers is None:
             default_headers = {"Content-Type": "application/json"}
@@ -21,7 +21,8 @@ class BaseClient:
             "X-API-Key": self.api_key,
             **(default_headers or {}),
         }
-        self.base_url = base_url
+        # Use DATAMAKER_API_URL environment variable if base_url is not provided
+        self.base_url = base_url or os.getenv("DATAMAKER_API_URL") or "https://api.datamaker.automators.com"
 
     def _make_request(self, method: str, endpoint: str, **kwargs) -> requests.Response:
         """Make an HTTP request to the API."""

@@ -31,7 +31,7 @@ class DataMaker:
         self,
         api_key: str = None,
         default_headers: Dict[str, Optional[str]] = None,
-        base_url: Optional[str] = "https://api.datamaker.automators.com",
+        base_url: Optional[str] = None,
     ):
         if default_headers is None:
             default_headers = {"Content-Type": "application/json"}
