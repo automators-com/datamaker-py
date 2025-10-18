@@ -1,0 +1,492 @@
+# DataMaker Python SDK
+
+> The official Python library for the Automators DataMaker API - A powerful tool for generating realistic test data programmatically.
+
+DataMaker is a Python SDK that provides a simple interface to the DataMaker API for generating synthetic test data. It supports various data types including names, emails, numbers, UUIDs, custom types, and AI-generated content.
+
+## Installation
+
+Install the package using pip:
+
+```bash
+pip install datamaker-py
+```
+
+Requires Python >= 3.11
+
+## Quick Start
+
+```python
+from datamaker import DataMaker, Template
+
+# Create an instance (uses DATAMAKER_API_KEY environment variable)
+datamaker = DataMaker()
+
+# Define a template
+template = Template(
+    name="user template",
+    quantity=10,
+    fields=[
+        {"name": "first_name", "type": "First Name"},
+        {"name": "last_name", "type": "Last Name"},
+        {"name": "email", "type": "Derived", "options": {"value": "{{first_name}}.{{last_name}}@example.com"}},
+    ],
+)
+
+# Generate data
+result = datamaker.generate(template)
+```
+
+## Core Classes
+
+### DataMaker
+
+The main client class that provides access to all API functionality.
+
+**Constructor:**
+```python
+DataMaker(
+    api_key: str = None,              # Defaults to DATAMAKER_API_KEY env var
+    default_headers: Dict = None,      # Custom headers
+    base_url: str = None              # Defaults to https://api.datamaker.automators.com
+)
+```
+
+### Template
+
+Defines the structure for data generation.
+
+**Constructor:**
+```python
+Template(
+    fields: List[DataMakerField],     # List of field definitions
+    name: str = None,                 # Template name
+    quantity: int = None              # Number of records to generate
+)
+```
+
+**Field Types:**
+- First Name, Last Name, Full Name
+- Email, Phone Number, Address
+- UUID, Number, Float, Boolean
+- Words, Sentences, Paragraphs
+- Date, Time, DateTime
+- Derived (template-based fields)
+- Custom (from list of values)
+- AI (AI-generated content)
+
+## API Methods
+
+### Data Generation
+
+**generate(template)**
+Generate data using a template object or dictionary.
+
+```python
+result = datamaker.generate(template)
+```
+
+**generate_from_template_id(template_id, quantity)**
+Generate data from a saved template ID.
+
+```python
+result = datamaker.generate_from_template_id("template_id_here", quantity=50)
+```
+
+### Template Management
+
+**get_templates()**
+Fetch all templates.
+
+**create_template(template_data, project_id, team_id)**
+Create a new template.
+
+**get_template(template_id)**
+Get a specific template by ID.
+
+**update_template(template_id, template_data)**
+Update an existing template.
+
+**delete_template(template_id)**
+Delete a template.
+
+### Project Management
+
+**get_projects()**
+Get all projects.
+
+**create_project(project_data, team_id)**
+Create a new project.
+
+**get_project(project_id)**
+Get project by ID.
+
+**update_project(project_id, project_data)**
+Update a project.
+
+**delete_project(project_id)**
+Delete a project.
+
+### Team Management
+
+**get_teams()**
+Get all teams.
+
+**create_team(team_data)**
+Create a new team.
+
+**update_team(team_id, team_data)**
+Update a team.
+
+**delete_team(team_id)**
+Delete a team.
+
+**setup_team(team_data)**
+Setup a new team.
+
+### Team Member Management
+
+**get_team_members()**
+Get all team members.
+
+**add_team_member(member_data)**
+Add a team member.
+
+**invite_team_member(invite_data)**
+Invite a team member.
+
+**update_team_member(member_id, member_data)**
+Update a team member.
+
+**remove_team_member(member_id)**
+Remove a team member.
+
+### User Management
+
+**get_users()**
+Get all users.
+
+**create_user(user_data, user_id)**
+Create a new user.
+
+**get_current_user()**
+Get current user information.
+
+**provision_user(user_data)**
+Provision a new user.
+
+**update_user(user_id, user_data)**
+Update a user.
+
+**patch_user(user_id, user_data)**
+Partially update a user.
+
+**delete_user(user_id)**
+Delete a user.
+
+### API Key Management
+
+**get_api_keys()**
+Get all API keys.
+
+**create_api_key(key, scope, name, team_id)**
+Create a new API key.
+
+**update_api_key(key_id, key, name, team_id)**
+Update an API key.
+
+**delete_api_key(key_id)**
+Delete an API key.
+
+### Database Connections
+
+**get_connections()**
+Get all database connections.
+
+**create_connection(name, connection_type, connection_string, created_by, project_id, team_id)**
+Create a database connection.
+
+**update_connection(connection_id, name, connection_type, connection_string, created_by, project_id, team_id)**
+Update a database connection.
+
+**delete_connection(connection_id)**
+Delete a database connection.
+
+**test_connection(connection_data)**
+Test a database connection.
+
+**get_tables()**
+Get all tables from connections.
+
+### Custom Data Types
+
+**get_custom_data_types(project_id)**
+Get custom data types for a project.
+
+**create_custom_data_type(data_type_data)**
+Create a custom data type.
+
+**update_custom_data_type(data_type_id, data_type_data)**
+Update a custom data type.
+
+**delete_custom_data_type(data_type_id)**
+Delete a custom data type.
+
+### Endpoints
+
+**get_endpoints()**
+Get all endpoints.
+
+**create_endpoint(endpoint_data)**
+Create a new endpoint.
+
+**get_endpoint(endpoint_id)**
+Get endpoint by ID.
+
+**update_endpoint(endpoint_id, endpoint_data)**
+Update an endpoint.
+
+**delete_endpoint(endpoint_id)**
+Delete an endpoint.
+
+### Endpoint Folders
+
+**get_endpoint_folders()**
+Get all endpoint folders.
+
+**create_endpoint_folder(folder_data)**
+Create an endpoint folder.
+
+**update_endpoint_folder(folder_id, folder_data)**
+Update an endpoint folder.
+
+**delete_endpoint_folder(folder_id)**
+Delete an endpoint folder.
+
+### Template Folders
+
+**get_template_folders()**
+Get all template folders.
+
+**create_template_folder(folder_data)**
+Create a template folder.
+
+**update_template_folder(folder_id, folder_data)**
+Update a template folder.
+
+**delete_template_folder(folder_id)**
+Delete a template folder.
+
+### Shortcuts
+
+**get_shortcuts()**
+Get all shortcuts.
+
+**create_shortcut(shortcut_data)**
+Create a shortcut.
+
+**update_shortcut(shortcut_id, shortcut_data)**
+Update a shortcut.
+
+**delete_shortcut(shortcut_id)**
+Delete a shortcut.
+
+### Feedback
+
+**get_feedback()**
+Get all feedback.
+
+**submit_feedback(feedback_data)**
+Submit new feedback.
+
+**update_feedback(feedback_id, feedback_data)**
+Update feedback.
+
+**delete_feedback(feedback_id)**
+Delete feedback.
+
+### Export
+
+**export_to_rest(export_data)**
+Export data to REST API endpoint.
+
+**export_to_database(export_data)**
+Export data to a database.
+
+### Validation
+
+**validate_api_key()**
+Test API key authentication.
+
+## Field Types Reference
+
+### Basic Types
+- **First Name**: Generate random first names
+- **Last Name**: Generate random last names
+- **Full Name**: Generate full names
+- **Email**: Generate email addresses
+- **Phone Number**: Generate phone numbers
+- **Address**: Generate addresses
+
+### Data Types
+- **UUID**: Generate UUIDs (with options for uppercase/lowercase)
+- **Number**: Generate integers (with min/max options)
+- **Float**: Generate floating-point numbers (with precision options)
+- **Boolean**: Generate true/false values
+
+### Text Types
+- **Words**: Generate random words (configurable count)
+- **Sentences**: Generate random sentences
+- **Paragraphs**: Generate random paragraphs
+
+### Date/Time Types
+- **Date**: Generate dates
+- **Time**: Generate times
+- **DateTime**: Generate date-time values
+
+### Advanced Types
+- **Derived**: Create fields based on templates using {{field_name}} syntax
+- **Custom**: Generate values from a predefined list
+- **AI**: Generate content using AI with custom prompts
+
+## Environment Variables
+
+- **DATAMAKER_API_KEY**: Your DataMaker API key (required)
+- **DATAMAKER_API_URL**: Custom API URL (optional, defaults to https://api.datamaker.automators.com)
+
+## Examples
+
+### Basic User Data
+```python
+from datamaker import DataMaker, Template
+
+datamaker = DataMaker()
+
+template = Template(
+    name="users",
+    quantity=5,
+    fields=[
+        {"name": "id", "type": "UUID"},
+        {"name": "first_name", "type": "First Name"},
+        {"name": "last_name", "type": "Last Name"},
+        {"name": "email", "type": "Email"},
+        {"name": "age", "type": "Number", "options": {"min": 18, "max": 65}},
+    ],
+)
+
+users = datamaker.generate(template)
+```
+
+### Using Derived Fields
+```python
+template = Template(
+    name="employees",
+    quantity=10,
+    fields=[
+        {"name": "first_name", "type": "First Name"},
+        {"name": "last_name", "type": "Last Name"},
+        {"name": "email", "type": "Derived", "options": {"value": "{{first_name}}.{{last_name}}@company.com"}},
+        {"name": "employee_id", "type": "Derived", "options": {"value": "EMP-{{UUID}}"}},
+    ],
+)
+
+employees = datamaker.generate(template)
+```
+
+### Using Custom Values
+```python
+from datamaker import CustomField
+
+template = Template(
+    name="products",
+    quantity=20,
+    fields=[
+        {"name": "name", "type": "Words", "options": {"count": 2}},
+        {"name": "category", "type": "Custom", "options": {"values": ["Electronics", "Clothing", "Food", "Books"]}},
+        {"name": "price", "type": "Float", "options": {"min": 10.0, "max": 500.0, "precision": 2}},
+    ],
+)
+
+products = datamaker.generate(template)
+```
+
+### AI-Generated Content
+```python
+template = Template(
+    name="blog_posts",
+    quantity=3,
+    fields=[
+        {"name": "title", "type": "Words", "options": {"count": 5}},
+        {"name": "content", "type": "AI", "options": {"prompt": "Write a short blog post about technology"}},
+    ],
+)
+
+blog_posts = datamaker.generate(template)
+```
+
+### Generate from Saved Template
+```python
+# Using a template saved in your DataMaker account
+result = datamaker.generate_from_template_id(
+    template_id="cm2114bwg0001evbhfqo2seul",
+    quantity=100
+)
+```
+
+## Error Handling
+
+The SDK raises `DataMakerError` for API-related errors:
+
+```python
+from datamaker import DataMaker, DataMakerError
+
+datamaker = DataMaker()
+
+try:
+    result = datamaker.generate(template)
+except DataMakerError as e:
+    print(f"Error generating data: {e}")
+```
+
+## Advanced Usage
+
+### Custom Headers and Base URL
+```python
+datamaker = DataMaker(
+    api_key="your-api-key",
+    default_headers={"Custom-Header": "value"},
+    base_url="https://custom-api.example.com"
+)
+```
+
+### Direct Access to Route Clients
+For advanced use cases, access specific route clients directly:
+
+```python
+# Access specific clients
+templates_client = datamaker.templates
+projects_client = datamaker.projects
+users_client = datamaker.users
+
+# Use client methods
+all_templates = templates_client.get_templates()
+```
+
+## Robot Framework Integration
+
+DataMaker can be used with Robot Framework for test automation. See examples/robot-framework/ for integration examples.
+
+## Resources
+
+- [GitHub Repository](https://github.com/automators-com/datamaker-py): Source code and issue tracking
+- [PyPI Package](https://pypi.org/project/datamaker-py/): Official package distribution
+- API Base URL: https://api.datamaker.automators.com
+- License: MIT
+
+## Contributing
+
+See [CONTRIBUTING.md](https://github.com/automators-com/datamaker-py/blob/main/CONTRIBUTING.md) for development setup and contribution guidelines.
+
+## Support
+
+For issues, questions, or feature requests, please open an issue on the [GitHub repository](https://github.com/automators-com/datamaker-py/issues).
