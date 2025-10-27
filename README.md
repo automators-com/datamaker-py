@@ -51,6 +51,18 @@ if __name__ == "__main__":
 
 ```
 
+## Autocomplete Types
+
+This SDK automatically generates TypeScript autocomplete definitions for use in the [datamaker application](https://github.com/automators/datamaker). 
+
+The artifact is generated automatically on every push to the `main` branch and can be fetched from:
+
+```
+https://raw.githubusercontent.com/automators/datamaker-py/main/artifacts/autocomplete-types.ts
+```
+
+See [`artifacts/README.md`](artifacts/README.md) for more details.
+
 ## Development & Contibutions
 
 See the [contributing.md](/CONTRIBUTING.md) guide for details on how to contribute to this project.
