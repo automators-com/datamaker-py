@@ -1,0 +1,365 @@
+#!/usr/bin/env python3
+"""
+Generate TypeScript autocomplete definitions from the DataMaker Python SDK.
+
+This script analyzes the Python SDK and generates TypeScript definitions
+for autocomplete support in the datamaker application.
+"""
+
+import ast
+import sys
+from pathlib import Path
+from typing import Dict, List, Any
+import importlib.util
+
+
+class SDKAnalyzer:
+    """Analyzes the Python SDK to extract method signatures and types."""
+
+    def __init__(self, sdk_root: Path):
+        self.sdk_root = sdk_root
+        self.methods = []
+        self.field_types = []
+
+    def extract_methods(self) -> List[Dict[str, Any]]:
+        """Extract all public methods from the DataMaker class."""
+        methods = []
+
+        # Read the main.py file to analyze the DataMaker class
+        main_file = self.sdk_root / "src" / "datamaker" / "main.py"
+        if not main_file.exists():
+            print(f"⚠️  Could not find main.py at {main_file}")
+            return []
+
+        with open(main_file, "r", encoding="utf-8") as f:
+            source = f.read()
+
+        tree = ast.parse(source)
+        
+        # Find DataMaker class by iterating through top-level nodes
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef) and node.name == "DataMaker":
+                # Extract methods from this class
+                for item in node.body:
+                    if isinstance(item, ast.FunctionDef):
+                        method_info = self._extract_method_info(item)
+                        if method_info:
+                            methods.append(method_info)
+                break  # Found DataMaker, no need to continue
+
+        return methods
+
+    def _extract_method_info(self, node: ast.FunctionDef) -> Dict[str, Any]:
+        """Extract information from a method definition node."""
+        # Skip private methods and magic methods
+        if node.name.startswith("_") or node.name.startswith("__"):
+            return None
+
+        # Skip properties (@property decorator)
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Name) and decorator.id == "property":
+                return None
+            elif isinstance(decorator, ast.Attribute) and decorator.attr == "property":
+                return None
+
+        # Get docstring
+        docstring = ast.get_docstring(node) or ""
+
+        # Extract parameters
+        params = []
+        args = node.args.args
+        defaults = [None] * (len(args) - len(node.args.defaults)) + node.args.defaults if node.args.defaults else []
+
+        for i, arg in enumerate(args):
+            if arg.arg == "self":
+                continue
+
+            param_type = "any"
+            if arg.annotation:
+                type_str = ast.unparse(arg.annotation) if hasattr(ast, "unparse") else str(arg.annotation)
+                # Simplify common types
+                param_type = type_str.replace("Dict", "Dict").replace("List", "List").replace("Optional", "Optional")
+
+            params.append({
+                "name": arg.arg,
+                "type": param_type,
+                "optional": i >= len(args) - len(node.args.defaults) if node.args.defaults else False
+            })
+
+        return_type = "any"
+        if node.returns:
+            return_type = ast.unparse(node.returns) if hasattr(ast, "unparse") else str(node.returns)
+
+        return {
+            "name": node.name,
+            "docstring": docstring.strip(),
+            "params": params,
+            "return_type": return_type
+        }
+
+    def extract_field_types(self) -> List[str]:
+        """Extract available field types."""
+        template_file = self.sdk_root / "src" / "datamaker" / "template.py"
+        if not template_file.exists():
+            print(f"⚠️  Could not find template.py at {template_file}")
+            return []
+
+        with open(template_file, "r", encoding="utf-8") as f:
+            source = f.read()
+
+        field_types = []
+        tree = ast.parse(source)
+
+        # Iterate through top-level class definitions
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef) and node.name.endswith("Field"):
+                field_types.append(node.name)
+
+        return sorted(field_types)
+
+    def analyze(self):
+        """Perform complete analysis of the SDK."""
+        print("🔍 Analyzing SDK...")
+        self.methods = self.extract_methods()
+        self.field_types = self.extract_field_types()
+        print(f"✅ Found {len(self.methods)} methods and {len(self.field_types)} field types")
+
+
+class TypeScriptGenerator:
+    """Generates TypeScript code for autocomplete."""
+
+    def __init__(self, analyzer: SDKAnalyzer, version: str):
+        self.analyzer = analyzer
+        self.version = version
+
+    def generate(self) -> str:
+        """Generate the TypeScript code."""
+        lines = [
+            "// This file is auto-generated by the datamaker-py SDK",
+            "// DO NOT EDIT MANUALLY",
+            f"// Generated from version {self.version}",
+            "",
+            "// Monaco Editor CompletionItemKind enum values",
+            "// Reference: https://microsoft.github.io/monaco-editor/api/enums/monaco.languages.CompletionItemKind.html",
+            "export enum CompletionItemKind {",
+            "  Method = 0,",
+            "  Function = 1,",
+            "  Constructor = 2,",
+            "  Field = 3,",
+            "  Variable = 4,",
+            "  Class = 5,",
+            "  Struct = 6,",
+            "  Interface = 7,",
+            "  Module = 8,",
+            "  Property = 9,",
+            "  Event = 10,",
+            "  Operator = 11,",
+            "  Unit = 12,",
+            "  Value = 13,",
+            "  Constant = 14,",
+            "  Enum = 15,",
+            "  EnumMember = 16,",
+            "  Keyword = 17,",
+            "  Text = 18,",
+            "  Color = 19,",
+            "  File = 20,",
+            "  Reference = 21,",
+            "  Customcolor = 22,",
+            "  Folder = 23,",
+            "  TypeParameter = 24,",
+            "  Snippet = 25,",
+            "}",
+            "",
+            "export interface DataMakerMethod {",
+            "  label: string;",
+            "  kind: number;",
+            "  insertText: string;",
+            "  documentation?: string;",
+            "  detail?: string;",
+            "  sortText?: string;",
+            "}",
+            "",
+            "export interface DataMakerFieldType {",
+            "  label: string;",
+            "  kind: number;",
+            "  insertText: string;",
+            "  documentation?: string;",
+            "}",
+            "",
+            'export const SDK_VERSION = "' + self.version + '";',
+            "",
+            self._generate_methods_code(),
+            "",
+            self._generate_field_types_code(),
+            "",
+            self._generate_helper_functions(),
+        ]
+
+        return "\n".join(lines)
+
+    def _generate_methods_code(self) -> str:
+        """Generate code for method suggestions."""
+        lines = [
+            "export const METHOD_SUGGESTIONS: DataMakerMethod[] = [",
+        ]
+
+        for method in self.analyzer.methods:
+            # Create label
+            label = method["name"]
+
+            # Create insert text (method signature)
+            params_list = []
+            for i, p in enumerate(method["params"], start=1):
+                params_list.append(f'${{{i}:{p["name"]}}}: {p["type"]}')
+            params_str = ", ".join(params_list)
+            insert_text = f"{label}({params_str})" if params_str else f"{label}()"
+
+            # Create documentation
+            doc = method["docstring"] or f"Call {label}"
+
+            lines.append("  {")
+            lines.append(f'    label: "{label}",')
+            lines.append("    kind: CompletionItemKind.Method,")
+            lines.append(f'    insertText: "{insert_text}",')
+            lines.append(f'    documentation: "{self._escape_quotes(doc)}",')
+            lines.append(f'    detail: "Method: {label}",')
+            lines.append(f'    sortText: "{label}",')
+            lines.append("  },")
+
+        lines.append("];")
+        return "\n".join(lines)
+
+    def _generate_field_types_code(self) -> str:
+        """Generate code for field type suggestions."""
+        lines = [
+            "export const FIELD_TYPE_SUGGESTIONS: DataMakerFieldType[] = [",
+        ]
+
+        field_type_docs = {
+            "WordsField": "Generate random words",
+            "UUIDField": "Generate UUID values",
+            "NumberField": "Generate random numbers",
+            "FloatField": "Generate random float values",
+            "BooleanField": "Generate boolean values",
+            "AIField": "Generate AI-powered content",
+            "CustomField": "Generate from custom values",
+        }
+
+        for field_type in self.analyzer.field_types:
+            doc = field_type_docs.get(field_type, f"Use {field_type}")
+
+            lines.append("  {")
+            lines.append(f'    label: "{field_type}",')
+            lines.append("    kind: CompletionItemKind.Class,")
+            lines.append(f'    insertText: "{field_type}(${{1:name}}, ${{2:options}})",')
+            lines.append(f'    documentation: "{doc}",')
+            lines.append("  },")
+
+        lines.append("];")
+        return "\n".join(lines)
+
+    def _generate_helper_functions(self) -> str:
+        """Generate helper functions for using the suggestions."""
+        return """// CompletionItem interface compatible with Monaco Editor
+export interface CompletionItem {
+  label: string;
+  kind: number;
+  insertText: string;
+  insertTextRules?: number;
+  documentation?: string;
+  detail?: string;
+  sortText?: string;
+}
+
+// InsertAsSnippet rule value (equivalent to monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet = 4)
+const INSERT_AS_SNIPPET = 4;
+
+export function createMethodCompletionItem(item: DataMakerMethod): CompletionItem {
+  return {
+    label: item.label,
+    kind: item.kind,
+    insertText: item.insertText,
+    insertTextRules: INSERT_AS_SNIPPET,
+    documentation: item.documentation,
+    detail: item.detail,
+    sortText: item.sortText,
+  };
+}
+
+export function createFieldTypeCompletionItem(item: DataMakerFieldType): CompletionItem {
+  return {
+    label: item.label,
+    kind: item.kind,
+    insertText: item.insertText,
+    insertTextRules: INSERT_AS_SNIPPET,
+    documentation: item.documentation,
+  };
+}
+
+export const ALL_SUGGESTIONS: CompletionItem[] = [
+  ...METHOD_SUGGESTIONS.map(createMethodCompletionItem),
+  ...FIELD_TYPE_SUGGESTIONS.map(createFieldTypeCompletionItem),
+];
+"""
+
+    def _escape_quotes(self, text: str) -> str:
+        """Escape quotes in text for use in strings."""
+        return text.replace('"', '\\"').replace('\n', ' ').strip()
+
+
+def get_version() -> str:
+    """Get the SDK version from pyproject.toml."""
+    pyproject = Path("pyproject.toml")
+    if pyproject.exists():
+        with open(pyproject, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip().startswith("version ="):
+                    # Extract version from line like: version = "0.7.0"
+                    return line.split('=')[1].strip().strip('"').strip("'")
+    return "unknown"
+
+
+def main():
+    """Main entry point."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate TypeScript autocomplete definitions")
+    parser.add_argument(
+        "--output-path",
+        type=str,
+        default="./artifacts/autocomplete-types.ts",
+        help="Output path for the generated TypeScript file",
+    )
+    args = parser.parse_args()
+
+    # Find the repository root
+    repo_root = Path(__file__).parent.parent
+
+    # Get version
+    version = get_version()
+    print(f"📦 SDK Version: {version}")
+
+    # Analyze SDK
+    analyzer = SDKAnalyzer(repo_root)
+    analyzer.analyze()
+
+    # Generate TypeScript
+    print("⚙️  Generating TypeScript...")
+    generator = TypeScriptGenerator(analyzer, version)
+    ts_code = generator.generate()
+
+    # Write output
+    output_path = Path(args.output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(ts_code)
+
+    print(f"✅ Generated: {output_path}")
+    print(f"   Methods: {len(analyzer.methods)}")
+    print(f"   Field types: {len(analyzer.field_types)}")
+
+
+if __name__ == "__main__":
+    main()
+

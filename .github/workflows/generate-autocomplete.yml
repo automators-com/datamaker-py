@@ -1,0 +1,50 @@
+name: Generate Autocomplete Artifact
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+      
+      - name: Generate autocomplete artifacts
+        run: |
+          python scripts/generate-autocomplete-artifact.py --output-path ./artifacts/autocomplete-types.ts
+      
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --exit-code artifacts/ || echo "changed=true" >> $GITHUB_OUTPUT
+        continue-on-error: true
+      
+      - name: Commit artifact to repo
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add artifacts/autocomplete-types.ts
+          git commit -m "🤖 Auto-generate autocomplete types [skip ci]" || exit 0
+          git push
+
