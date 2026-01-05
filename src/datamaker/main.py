@@ -32,38 +32,40 @@ class DataMaker:
         api_key: str = None,
         default_headers: Dict[str, Optional[str]] = None,
         base_url: Optional[str] = None,
+        verify: bool = True,
     ):
         if default_headers is None:
             default_headers = {"Content-Type": "application/json"}
 
         # Initialize all route clients
-        self._generation = GenerationClient(api_key, default_headers, base_url)
-        self._templates = TemplatesClient(api_key, default_headers, base_url)
-        self._api_keys = ApiKeysClient(api_key, default_headers, base_url)
-        self._connections = ConnectionsClient(api_key, default_headers, base_url)
-        self._projects = ProjectsClient(api_key, default_headers, base_url)
-        self._users = UsersClient(api_key, default_headers, base_url)
-        self._teams = TeamsClient(api_key, default_headers, base_url)
-        self._team_members = TeamMembersClient(api_key, default_headers, base_url)
+        self._generation = GenerationClient(api_key, default_headers, base_url, verify)
+        self._templates = TemplatesClient(api_key, default_headers, base_url, verify)
+        self._api_keys = ApiKeysClient(api_key, default_headers, base_url, verify)
+        self._connections = ConnectionsClient(api_key, default_headers, base_url, verify)
+        self._projects = ProjectsClient(api_key, default_headers, base_url, verify)
+        self._users = UsersClient(api_key, default_headers, base_url, verify)
+        self._teams = TeamsClient(api_key, default_headers, base_url, verify)
+        self._team_members = TeamMembersClient(api_key, default_headers, base_url, verify)
         self._custom_data_types = CustomDataTypesClient(
-            api_key, default_headers, base_url
+            api_key, default_headers, base_url, verify
         )
         self._endpoint_folders = EndpointFoldersClient(
-            api_key, default_headers, base_url
+            api_key, default_headers, base_url, verify
         )
-        self._endpoints = EndpointsClient(api_key, default_headers, base_url)
+        self._endpoints = EndpointsClient(api_key, default_headers, base_url, verify)
         self._template_folders = TemplateFoldersClient(
-            api_key, default_headers, base_url
+            api_key, default_headers, base_url, verify
         )
-        self._shortcuts = ShortcutsClient(api_key, default_headers, base_url)
-        self._feedback = FeedbackClient(api_key, default_headers, base_url)
-        self._export = ExportClient(api_key, default_headers, base_url)
-        self._validation = ValidationClient(api_key, default_headers, base_url)
+        self._shortcuts = ShortcutsClient(api_key, default_headers, base_url, verify)
+        self._feedback = FeedbackClient(api_key, default_headers, base_url, verify)
+        self._export = ExportClient(api_key, default_headers, base_url, verify)
+        self._validation = ValidationClient(api_key, default_headers, base_url, verify)
 
         # Maintain backward compatibility
         self.api_key = self._generation.api_key
         self.headers = self._generation.headers
         self.base_url = self._generation.base_url
+        self.verify = verify
 
     # =================== GENERATION METHODS ===================
     def generate(self, template):

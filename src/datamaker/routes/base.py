@@ -12,6 +12,7 @@ class BaseClient:
         api_key: str = None,
         default_headers: Dict[str, Optional[str]] = None,
         base_url: Optional[str] = None,
+        verify: bool = True,
     ):
         if default_headers is None:
             default_headers = {"Content-Type": "application/json"}
@@ -23,10 +24,14 @@ class BaseClient:
         }
         # Use DATAMAKER_API_URL environment variable if base_url is not provided
         self.base_url = base_url or os.getenv("DATAMAKER_API_URL") or "https://api.datamaker.automators.com"
+        self.verify = verify
 
     def _make_request(self, method: str, endpoint: str, **kwargs) -> requests.Response:
         """Make an HTTP request to the API."""
         url = f"{self.base_url}{endpoint}"
+        # Ensure verify is passed to requests, but allow kwargs to override if needed
+        if "verify" not in kwargs:
+            kwargs["verify"] = self.verify
         response = requests.request(method, url, headers=self.headers, **kwargs)
 
         if response.status_code not in [200, 201]:
