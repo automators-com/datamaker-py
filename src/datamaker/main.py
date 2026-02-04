@@ -479,23 +479,6 @@ class DataMaker:
             folder_id=folder_id,
         )
 
-    def save_file(
-        self,
-        file_id: str,
-        name: Optional[str] = None,
-        content=None,
-        description: Optional[str] = None,
-        folder_id: Optional[str] = None,
-    ):
-        """Save/update an existing file's metadata and/or content."""
-        return self._scenario_files.save_file(
-            file_id=file_id,
-            name=name,
-            content=content,
-            description=description,
-            folder_id=folder_id,
-        )
-
     def delete_scenario_file(self, file_id: str):
         """Delete a file by ID."""
         return self._scenario_files.delete_scenario_file(file_id)
@@ -554,6 +537,63 @@ class DataMaker:
         """
         return self._scenario_files.read_file_by_path_as_text(
             file_path, storage_base_url, encoding
+        )
+
+    def save_file(
+        self,
+        file_path: str,
+        scenario_id: Optional[str] = None,
+        team_id: Optional[str] = None,
+        project_id: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        folder_id: Optional[str] = None,
+    ) -> Dict:
+        """Convenience method to save a local file to workspace storage.
+
+        This method simplifies uploading files by automatically pulling required
+        context (scenario_id, team_id, project_id) from environment variables
+        if they're not provided. This is especially useful in DataMaker sandbox
+        environments where these variables are pre-configured.
+
+        Args:
+            file_path: Path to the local file to save to workspace.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID env var.
+            name: Optional filename. If not provided, uses the original filename.
+            description: Optional description of the file.
+            folder_id: Optional folder ID to place the file in.
+
+        Returns:
+            The created file metadata dictionary.
+
+        Raises:
+            DataMakerError: If required IDs are not provided and not available in environment.
+
+        Example:
+            >>> # In a DataMaker sandbox environment:
+            >>> dm = DataMaker()
+            >>> with open("test_file.txt", "w") as f:
+            ...     f.write("Hello from the sandbox!")
+            >>> result = dm.save_file("test_file.txt")
+            >>> print(f"File saved: {result['name']}")
+
+            >>> # Or specify IDs explicitly:
+            >>> result = dm.save_file(
+            ...     "test_file.txt",
+            ...     scenario_id="scenario-123",
+            ...     team_id="team-456"
+            ... )
+        """
+        return self._scenario_files.save_file(
+            file_path=file_path,
+            scenario_id=scenario_id,
+            team_id=team_id,
+            project_id=project_id,
+            name=name,
+            description=description,
+            folder_id=folder_id,
         )
 
     # =================== PROPERTY ACCESS TO CLIENTS ===================

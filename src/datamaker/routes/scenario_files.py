@@ -179,63 +179,6 @@ class ScenarioFilesClient(BaseClient):
             folder_id=folder_id,
         )
 
-    def save_file(
-        self,
-        file_id: str,
-        name: Optional[str] = None,
-        content: Optional[Union[str, bytes, BinaryIO]] = None,
-        description: Optional[str] = None,
-        folder_id: Optional[str] = None,
-    ) -> Dict:
-        """Save/update an existing file's metadata and/or content.
-
-        Args:
-            file_id: The unique identifier of the file to update.
-            name: Optional new filename.
-            content: Optional new content.
-            description: Optional new description.
-            folder_id: Optional new folder ID.
-
-        Returns:
-            The updated file metadata dictionary.
-        """
-        file_data = {}
-
-        if name:
-            file_data["name"] = name
-        if description is not None:
-            file_data["description"] = description
-        if folder_id is not None:
-            file_data["folderId"] = folder_id
-
-        if content is not None:
-            # Handle different content types
-            if isinstance(content, str):
-                content_bytes = content.encode("utf-8")
-            elif hasattr(content, "read"):
-                content_bytes = content.read()
-            else:
-                content_bytes = content
-
-            file_data["content"] = base64.b64encode(content_bytes).decode("utf-8")
-            file_data["size"] = len(content_bytes)
-
-            # Update MIME type if name changed
-            if name:
-                mime_type, _ = mimetypes.guess_type(name)
-                if mime_type:
-                    file_data["mimeType"] = mime_type
-
-        if not file_data:
-            raise DataMakerError(
-                "No update data provided. Specify at least one field to update."
-            )
-
-        response = self._make_request(
-            "PUT", f"/scenario-files/{file_id}", json=file_data
-        )
-        return response.json()
-
     def delete_scenario_file(self, file_id: str) -> Dict:
         """Delete a file by ID.
 
@@ -338,3 +281,75 @@ class ScenarioFilesClient(BaseClient):
         """
         content = self.read_file_by_path(file_path, storage_base_url)
         return content.decode(encoding)
+
+    def save_file(
+        self,
+        file_path: str,
+        scenario_id: Optional[str] = None,
+        team_id: Optional[str] = None,
+        project_id: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        folder_id: Optional[str] = None,
+    ) -> Dict:
+        """Convenience method to save a local file to workspace storage.
+
+        This method simplifies uploading files by automatically pulling required
+        context (scenario_id, team_id, project_id) from environment variables
+        if they're not provided. This is especially useful in DataMaker sandbox
+        environments where these variables are pre-configured.
+
+        Args:
+            file_path: Path to the local file to save to workspace.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID env var.
+            name: Optional filename. If not provided, uses the original filename.
+            description: Optional description of the file.
+            folder_id: Optional folder ID to place the file in.
+
+        Returns:
+            The created file metadata dictionary.
+
+        Raises:
+            DataMakerError: If required IDs are not provided and not available in environment.
+
+        Example:
+            >>> # In a DataMaker sandbox environment:
+            >>> dm = DataMaker()
+            >>> result = dm.save_file("test_file.txt")
+            >>> print(f"File saved: {result['name']}")
+
+            >>> # Or specify IDs explicitly:
+            >>> result = dm.save_file(
+            ...     "test_file.txt",
+            ...     scenario_id="scenario-123",
+            ...     team_id="team-456"
+            ... )
+        """
+        # Get required IDs from environment if not provided
+        scenario_id = scenario_id or os.environ.get("DATAMAKER_SCENARIO_ID")
+        team_id = team_id or os.environ.get("DATAMAKER_TEAM_ID")
+        project_id = project_id or os.environ.get("DATAMAKER_PROJECT_ID")
+
+        if not scenario_id:
+            raise DataMakerError(
+                "scenario_id is required. Either pass it as a parameter or set "
+                "DATAMAKER_SCENARIO_ID environment variable."
+            )
+
+        if not team_id:
+            raise DataMakerError(
+                "team_id is required. Either pass it as a parameter or set "
+                "DATAMAKER_TEAM_ID environment variable."
+            )
+
+        return self.upload_scenario_file_from_path(
+            file_path=file_path,
+            scenario_id=scenario_id,
+            team_id=team_id,
+            project_id=project_id,
+            name=name,
+            description=description,
+            folder_id=folder_id,
+        )

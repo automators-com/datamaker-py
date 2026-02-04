@@ -637,14 +637,6 @@ export const METHOD_SUGGESTIONS: DataMakerMethod[] = [
     sortText: "upload_scenario_file_from_path",
   },
   {
-    label: "save_file",
-    kind: CompletionItemKind.Method,
-    insertText: "save_file(${1:file_id}: str, ${2:name}: Optional[str], ${3:content}: any, ${4:description}: Optional[str], ${5:folder_id}: Optional[str])",
-    documentation: "Save/update an existing file's metadata and/or content.",
-    detail: "Method: save_file",
-    sortText: "save_file",
-  },
-  {
     label: "delete_scenario_file",
     kind: CompletionItemKind.Method,
     insertText: "delete_scenario_file(${1:file_id}: str)",
@@ -667,6 +659,14 @@ export const METHOD_SUGGESTIONS: DataMakerMethod[] = [
     documentation: "Read a file directly from storage by its path and return as text.  Convenience method that reads a file and decodes it as text.  Args:     file_path: The file path (key) in storage.     storage_base_url: Optional base URL for the storage bucket.     encoding: Text encoding to use (default: 'utf-8').  Returns:     The file content as a string.  Example:     >>> dm = DataMaker(api_key=\"your-key\")     >>> content = dm.read_file_by_path_as_text(\"scenarios/abc123/uploads/data.txt\")     >>> print(content)",
     detail: "Method: read_file_by_path_as_text",
     sortText: "read_file_by_path_as_text",
+  },
+  {
+    label: "save_file",
+    kind: CompletionItemKind.Method,
+    insertText: "save_file(${1:file_path}: str, ${2:scenario_id}: Optional[str], ${3:team_id}: Optional[str], ${4:project_id}: Optional[str], ${5:name}: Optional[str], ${6:description}: Optional[str], ${7:folder_id}: Optional[str])",
+    documentation: "Convenience method to save a local file to workspace storage.  This method simplifies uploading files by automatically pulling required context (scenario_id, team_id, project_id) from environment variables if they're not provided. This is especially useful in DataMaker sandbox environments where these variables are pre-configured.  Args:     file_path: Path to the local file to save to workspace.     scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.     team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.     project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID env var.     name: Optional filename. If not provided, uses the original filename.     description: Optional description of the file.     folder_id: Optional folder ID to place the file in.  Returns:     The created file metadata dictionary.  Raises:     DataMakerError: If required IDs are not provided and not available in environment.  Example:     >>> # In a DataMaker sandbox environment:     >>> dm = DataMaker()     >>> with open(\"test_file.txt\", \"w\") as f:     ...     f.write(\"Hello from the sandbox!\")     >>> result = dm.save_file(\"test_file.txt\")     >>> print(f\"File saved: {result['name']}\")      >>> # Or specify IDs explicitly:     >>> result = dm.save_file(     ...     \"test_file.txt\",     ...     scenario_id=\"scenario-123\",     ...     team_id=\"team-456\"     ... )",
+    detail: "Method: save_file",
+    sortText: "save_file",
   },
 ];
 
