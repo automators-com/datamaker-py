@@ -20,6 +20,7 @@ from .routes.folders_and_utils import (
     FeedbackClient,
 )
 from .routes.export_and_validation import ExportClient, ValidationClient
+from .routes.scenario_files import ScenarioFilesClient
 
 load_dotenv()
 
@@ -41,11 +42,15 @@ class DataMaker:
         self._generation = GenerationClient(api_key, default_headers, base_url, verify)
         self._templates = TemplatesClient(api_key, default_headers, base_url, verify)
         self._api_keys = ApiKeysClient(api_key, default_headers, base_url, verify)
-        self._connections = ConnectionsClient(api_key, default_headers, base_url, verify)
+        self._connections = ConnectionsClient(
+            api_key, default_headers, base_url, verify
+        )
         self._projects = ProjectsClient(api_key, default_headers, base_url, verify)
         self._users = UsersClient(api_key, default_headers, base_url, verify)
         self._teams = TeamsClient(api_key, default_headers, base_url, verify)
-        self._team_members = TeamMembersClient(api_key, default_headers, base_url, verify)
+        self._team_members = TeamMembersClient(
+            api_key, default_headers, base_url, verify
+        )
         self._custom_data_types = CustomDataTypesClient(
             api_key, default_headers, base_url, verify
         )
@@ -60,6 +65,9 @@ class DataMaker:
         self._feedback = FeedbackClient(api_key, default_headers, base_url, verify)
         self._export = ExportClient(api_key, default_headers, base_url, verify)
         self._validation = ValidationClient(api_key, default_headers, base_url, verify)
+        self._scenario_files = ScenarioFilesClient(
+            api_key, default_headers, base_url, verify
+        )
 
         # Maintain backward compatibility
         self.api_key = self._generation.api_key
@@ -408,6 +416,186 @@ class DataMaker:
         """Test API key authentication."""
         return self._validation.validate_api_key()
 
+    # =================== SCENARIO FILE METHODS ===================
+    def get_scenario_files(self, scenario_id: Optional[str] = None):
+        """Get all files for a scenario or all accessible files."""
+        return self._scenario_files.get_scenario_files(scenario_id)
+
+    def get_scenario_file(self, file_id: str):
+        """Get metadata for a specific file by ID."""
+        return self._scenario_files.get_scenario_file(file_id)
+
+    def download_scenario_file(self, file_id: str):
+        """Download a file's content by ID."""
+        return self._scenario_files.download_scenario_file(file_id)
+
+    def download_scenario_file_to_path(self, file_id: str, destination_path: str):
+        """Download a file and save it to a local path."""
+        return self._scenario_files.download_scenario_file_to_path(
+            file_id, destination_path
+        )
+
+    def create_scenario_file(
+        self,
+        name: str,
+        content,
+        scenario_id: str,
+        team_id: str,
+        project_id: Optional[str] = None,
+        description: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        folder_id: Optional[str] = None,
+    ):
+        """Create/upload a new file in a scenario."""
+        return self._scenario_files.create_scenario_file(
+            name=name,
+            content=content,
+            scenario_id=scenario_id,
+            team_id=team_id,
+            project_id=project_id,
+            description=description,
+            mime_type=mime_type,
+            folder_id=folder_id,
+        )
+
+    def upload_scenario_file_from_path(
+        self,
+        file_path: str,
+        scenario_id: str,
+        team_id: str,
+        project_id: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        folder_id: Optional[str] = None,
+    ):
+        """Upload a file from a local path to a scenario."""
+        return self._scenario_files.upload_scenario_file_from_path(
+            file_path=file_path,
+            scenario_id=scenario_id,
+            team_id=team_id,
+            project_id=project_id,
+            name=name,
+            description=description,
+            folder_id=folder_id,
+        )
+
+    def delete_scenario_file(self, file_id: str):
+        """Delete a file by ID."""
+        return self._scenario_files.delete_scenario_file(file_id)
+
+    def read_file_by_path(
+        self,
+        file_path: str,
+        storage_base_url: Optional[str] = None,
+    ):
+        """Read a file directly from storage by its path.
+
+        This method allows you to read files from the storage bucket using the
+        file path copied from the workspace files modal. It's useful for accessing
+        files uploaded to scenarios from within Python scripts.
+
+        Args:
+            file_path: The file path (key) in storage. This is typically copied from
+                      the workspace files modal using the "Copy path" button.
+                      Example: "scenarios/scenario-id/uploads/filename.txt"
+            storage_base_url: Optional base URL for the storage bucket. If not provided,
+                             uses the DATAMAKER_STORAGE_URL environment variable or a default.
+
+        Returns:
+            The file content as bytes.
+
+        Example:
+            >>> dm = DataMaker(api_key="your-key")
+            >>> # Copy path from UI: "scenarios/abc123/uploads/data.json"
+            >>> content = dm.read_file_by_path("scenarios/abc123/uploads/data.json")
+            >>> data = json.loads(content.decode('utf-8'))
+        """
+        return self._scenario_files.read_file_by_path(file_path, storage_base_url)
+
+    def read_file_by_path_as_text(
+        self,
+        file_path: str,
+        storage_base_url: Optional[str] = None,
+        encoding: str = "utf-8",
+    ):
+        """Read a file directly from storage by its path and return as text.
+
+        Convenience method that reads a file and decodes it as text.
+
+        Args:
+            file_path: The file path (key) in storage.
+            storage_base_url: Optional base URL for the storage bucket.
+            encoding: Text encoding to use (default: 'utf-8').
+
+        Returns:
+            The file content as a string.
+
+        Example:
+            >>> dm = DataMaker(api_key="your-key")
+            >>> content = dm.read_file_by_path_as_text("scenarios/abc123/uploads/data.txt")
+            >>> print(content)
+        """
+        return self._scenario_files.read_file_by_path_as_text(
+            file_path, storage_base_url, encoding
+        )
+
+    def save_file(
+        self,
+        file_path: str,
+        scenario_id: Optional[str] = None,
+        team_id: Optional[str] = None,
+        project_id: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        folder_id: Optional[str] = None,
+    ) -> Dict:
+        """Convenience method to save a local file to workspace storage.
+
+        This method simplifies uploading files by automatically pulling required
+        context (scenario_id, team_id, project_id) from environment variables
+        if they're not provided. This is especially useful in DataMaker sandbox
+        environments where these variables are pre-configured.
+
+        Args:
+            file_path: Path to the local file to save to workspace.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID env var.
+            name: Optional filename. If not provided, uses the original filename.
+            description: Optional description of the file.
+            folder_id: Optional folder ID to place the file in.
+
+        Returns:
+            The created file metadata dictionary.
+
+        Raises:
+            DataMakerError: If required IDs are not provided and not available in environment.
+
+        Example:
+            >>> # In a DataMaker sandbox environment:
+            >>> dm = DataMaker()
+            >>> with open("test_file.txt", "w") as f:
+            ...     f.write("Hello from the sandbox!")
+            >>> result = dm.save_file("test_file.txt")
+            >>> print(f"File saved: {result['name']}")
+
+            >>> # Or specify IDs explicitly:
+            >>> result = dm.save_file(
+            ...     "test_file.txt",
+            ...     scenario_id="scenario-123",
+            ...     team_id="team-456"
+            ... )
+        """
+        return self._scenario_files.save_file(
+            file_path=file_path,
+            scenario_id=scenario_id,
+            team_id=team_id,
+            project_id=project_id,
+            name=name,
+            description=description,
+            folder_id=folder_id,
+        )
+
     # =================== PROPERTY ACCESS TO CLIENTS ===================
     # For advanced users who want direct access to specific clients
     @property
@@ -489,3 +677,8 @@ class DataMaker:
     def validation(self):
         """Access to validation client."""
         return self._validation
+
+    @property
+    def scenario_files(self):
+        """Access to scenario files client."""
+        return self._scenario_files
