@@ -439,14 +439,28 @@ class DataMaker:
         self,
         name: str,
         content,
-        scenario_id: str,
-        team_id: str,
+        scenario_id: Optional[str] = None,
+        team_id: Optional[str] = None,
         project_id: Optional[str] = None,
         description: Optional[str] = None,
         mime_type: Optional[str] = None,
         folder_id: Optional[str] = None,
     ):
-        """Create/upload a new file in a scenario."""
+        """Create/upload a new file in a scenario.
+
+        Args:
+            name: The filename (e.g., 'data.json', 'config.yaml').
+            content: The file content - can be a string, bytes, or file-like object.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID env var.
+            description: Optional description of the file.
+            mime_type: Optional MIME type. If not provided, will be guessed from filename.
+            folder_id: Optional folder ID to place the file in.
+
+        Returns:
+            The created file metadata dictionary.
+        """
         return self._scenario_files.create_scenario_file(
             name=name,
             content=content,
@@ -461,14 +475,27 @@ class DataMaker:
     def upload_scenario_file_from_path(
         self,
         file_path: str,
-        scenario_id: str,
-        team_id: str,
+        scenario_id: Optional[str] = None,
+        team_id: Optional[str] = None,
         project_id: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         folder_id: Optional[str] = None,
     ):
-        """Upload a file from a local path to a scenario."""
+        """Upload a file from a local path to a scenario.
+
+        Args:
+            file_path: Path to the local file to upload.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID env var.
+            name: Optional filename. If not provided, uses the original filename.
+            description: Optional description of the file.
+            folder_id: Optional folder ID to place the file in.
+
+        Returns:
+            The created file metadata dictionary.
+        """
         return self._scenario_files.upload_scenario_file_from_path(
             file_path=file_path,
             scenario_id=scenario_id,
