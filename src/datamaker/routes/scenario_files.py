@@ -79,8 +79,8 @@ class ScenarioFilesClient(BaseClient):
         self,
         name: str,
         content: Union[str, bytes, BinaryIO],
-        scenario_id: str,
-        team_id: str,
+        scenario_id: Optional[str] = None,
+        team_id: Optional[str] = None,
         project_id: Optional[str] = None,
         description: Optional[str] = None,
         mime_type: Optional[str] = None,
@@ -91,16 +91,35 @@ class ScenarioFilesClient(BaseClient):
         Args:
             name: The filename (e.g., 'data.json', 'config.yaml').
             content: The file content - can be a string, bytes, or file-like object.
-            scenario_id: The scenario ID to associate this file with.
-            team_id: The team ID that owns this file.
-            project_id: Optional project ID to associate with.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
+            project_id: Optional project ID to associate with. Falls back to DATAMAKER_PROJECT_ID env var.
             description: Optional description of the file.
             mime_type: Optional MIME type. If not provided, will be guessed from filename.
             folder_id: Optional folder ID to place the file in.
 
         Returns:
             The created file metadata dictionary.
+
+        Raises:
+            DataMakerError: If required IDs are not provided and not available in environment.
         """
+        # Get required IDs from environment if not provided
+        scenario_id = scenario_id or os.environ.get("DATAMAKER_SCENARIO_ID")
+        team_id = team_id or os.environ.get("DATAMAKER_TEAM_ID")
+        project_id = project_id or os.environ.get("DATAMAKER_PROJECT_ID")
+
+        if not scenario_id:
+            raise DataMakerError(
+                "scenario_id is required. Either pass it as a parameter or set "
+                "DATAMAKER_SCENARIO_ID environment variable."
+            )
+
+        if not team_id:
+            raise DataMakerError(
+                "team_id is required. Either pass it as a parameter or set "
+                "DATAMAKER_TEAM_ID environment variable."
+            )
         # Handle different content types
         if isinstance(content, str):
             content_bytes = content.encode("utf-8")
@@ -140,8 +159,8 @@ class ScenarioFilesClient(BaseClient):
     def upload_scenario_file_from_path(
         self,
         file_path: str,
-        scenario_id: str,
-        team_id: str,
+        scenario_id: Optional[str] = None,
+        team_id: Optional[str] = None,
         project_id: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -151,16 +170,35 @@ class ScenarioFilesClient(BaseClient):
 
         Args:
             file_path: Path to the local file to upload.
-            scenario_id: The scenario ID to associate this file with.
-            team_id: The team ID that owns this file.
-            project_id: Optional project ID to associate with.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
+            project_id: Optional project ID to associate with. Falls back to DATAMAKER_PROJECT_ID env var.
             name: Optional filename. If not provided, uses the original filename.
             description: Optional description of the file.
             folder_id: Optional folder ID to place the file in.
 
         Returns:
             The created file metadata dictionary.
+
+        Raises:
+            DataMakerError: If file not found or required IDs are not provided and not available in environment.
         """
+        # Get required IDs from environment if not provided
+        scenario_id = scenario_id or os.environ.get("DATAMAKER_SCENARIO_ID")
+        team_id = team_id or os.environ.get("DATAMAKER_TEAM_ID")
+        project_id = project_id or os.environ.get("DATAMAKER_PROJECT_ID")
+
+        if not scenario_id:
+            raise DataMakerError(
+                "scenario_id is required. Either pass it as a parameter or set "
+                "DATAMAKER_SCENARIO_ID environment variable."
+            )
+
+        if not team_id:
+            raise DataMakerError(
+                "team_id is required. Either pass it as a parameter or set "
+                "DATAMAKER_TEAM_ID environment variable."
+            )
         if not os.path.exists(file_path):
             raise DataMakerError(f"File not found: {file_path}")
 
