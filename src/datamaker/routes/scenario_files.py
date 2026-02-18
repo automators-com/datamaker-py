@@ -17,60 +17,116 @@ class ScenarioFilesClient(BaseClient):
     on the DataMaker scenarios page.
     """
 
-    def get_scenario_files(self, scenario_id: Optional[str] = None) -> List[Dict]:
-        """Fetch all files for a scenario or all accessible files.
+    def get_scenario_files(
+        self, scenario_id: Optional[str] = None, folder: Optional[str] = None
+    ) -> List[Dict]:
+        """Fetch all files for a scenario.
 
         Args:
-            scenario_id: Optional scenario ID to filter files. If not provided,
-                        returns all accessible files.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+            folder: Optional folder filter ("uploads" or "outputs").
 
         Returns:
-            List of file metadata dictionaries containing id, name, size,
-            mimeType, createdAt, etc.
+            Dictionary containing files list, storage usage, and storage limit.
+
+        Raises:
+            DataMakerError: If scenario_id is not provided and not available in environment.
         """
-        endpoint = "/scenario-files"
-        if scenario_id:
-            endpoint = f"/scenario-files?scenarioId={scenario_id}"
+        # Get scenario_id from environment if not provided
+        scenario_id = scenario_id or os.environ.get("DATAMAKER_SCENARIO_ID")
+
+        if not scenario_id:
+            raise DataMakerError(
+                "scenario_id is required. Either pass it as a parameter or set "
+                "DATAMAKER_SCENARIO_ID environment variable."
+            )
+
+        endpoint = f"/scenarios/{scenario_id}/files"
+        if folder:
+            endpoint += f"?folder={folder}"
         response = self._make_request("GET", endpoint)
         return response.json()
 
-    def get_scenario_file(self, file_id: str) -> Dict:
+    def get_scenario_file(
+        self, file_id: str, scenario_id: Optional[str] = None
+    ) -> Dict:
         """Get metadata for a specific file by ID.
 
         Args:
             file_id: The unique identifier of the file.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
 
         Returns:
-            File metadata dictionary.
+            File metadata dictionary with refreshed presigned URL.
+
+        Raises:
+            DataMakerError: If scenario_id is not provided and not available in environment.
         """
-        response = self._make_request("GET", f"/scenario-files/{file_id}")
+        # Get scenario_id from environment if not provided
+        scenario_id = scenario_id or os.environ.get("DATAMAKER_SCENARIO_ID")
+
+        if not scenario_id:
+            raise DataMakerError(
+                "scenario_id is required. Either pass it as a parameter or set "
+                "DATAMAKER_SCENARIO_ID environment variable."
+            )
+
+        response = self._make_request(
+            "GET", f"/scenarios/{scenario_id}/files/{file_id}"
+        )
         return response.json()
 
-    def download_scenario_file(self, file_id: str) -> bytes:
+    def download_scenario_file(
+        self, file_id: str, scenario_id: Optional[str] = None
+    ) -> bytes:
         """Download a file's content by ID.
 
         Args:
             file_id: The unique identifier of the file.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
 
         Returns:
             The file content as bytes.
+
+        Raises:
+            DataMakerError: If scenario_id is not provided and not available in environment.
         """
-        response = self._make_request("GET", f"/scenario-files/{file_id}/download")
-        return response.content
+        # Get file metadata with presigned URL first
+        file_metadata = self.get_scenario_file(file_id, scenario_id)
+
+        if not file_metadata.get("presignedUrl"):
+            raise DataMakerError(f"No presigned URL available for file: {file_id}")
+
+        # Download file using presigned URL
+        presigned_url = file_metadata["presignedUrl"]
+        download_response = requests.get(presigned_url, timeout=30)
+
+        if download_response.status_code == 404:
+            raise DataMakerError(f"File not found: {file_id}")
+        elif download_response.status_code != 200:
+            raise DataMakerError(
+                f"Failed to download file: HTTP {download_response.status_code}"
+            )
+
+        return download_response.content
 
     def download_scenario_file_to_path(
-        self, file_id: str, destination_path: str
+        self, file_id: str, destination_path: str, scenario_id: Optional[str] = None
     ) -> str:
         """Download a file and save it to a local path.
 
         Args:
             file_id: The unique identifier of the file.
             destination_path: Local file path to save the downloaded content.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
 
         Returns:
             The destination path where the file was saved.
+
+        Raises:
+            DataMakerError: If scenario_id is not provided and not available in environment.
         """
-        content = self.download_scenario_file(file_id)
+        content = self.download_scenario_file(file_id, scenario_id)
         with open(destination_path, "wb") as f:
             f.write(content)
         return destination_path
@@ -165,17 +221,19 @@ class ScenarioFilesClient(BaseClient):
         name: Optional[str] = None,
         description: Optional[str] = None,
         folder_id: Optional[str] = None,
+        folder: str = "uploads",
     ) -> Dict:
-        """Upload a file from a local path to a scenario.
+        """Upload a file from a local path to a scenario using multipart upload.
 
         Args:
             file_path: Path to the local file to upload.
             scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
-            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
-            project_id: Optional project ID to associate with. Falls back to DATAMAKER_PROJECT_ID env var.
+            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var (not used for upload).
+            project_id: Optional project ID to associate with. Falls back to DATAMAKER_PROJECT_ID env var (not used for upload).
             name: Optional filename. If not provided, uses the original filename.
-            description: Optional description of the file.
-            folder_id: Optional folder ID to place the file in.
+            description: Optional description of the file (not used for multipart upload).
+            folder_id: Optional folder ID to place the file in (not used for multipart upload).
+            folder: Folder to upload to ("uploads" or "outputs", default: "uploads").
 
         Returns:
             The created file metadata dictionary.
@@ -185,8 +243,6 @@ class ScenarioFilesClient(BaseClient):
         """
         # Get required IDs from environment if not provided
         scenario_id = scenario_id or os.environ.get("DATAMAKER_SCENARIO_ID")
-        team_id = team_id or os.environ.get("DATAMAKER_TEAM_ID")
-        project_id = project_id or os.environ.get("DATAMAKER_PROJECT_ID")
 
         if not scenario_id:
             raise DataMakerError(
@@ -194,39 +250,53 @@ class ScenarioFilesClient(BaseClient):
                 "DATAMAKER_SCENARIO_ID environment variable."
             )
 
-        if not team_id:
-            raise DataMakerError(
-                "team_id is required. Either pass it as a parameter or set "
-                "DATAMAKER_TEAM_ID environment variable."
-            )
         if not os.path.exists(file_path):
             raise DataMakerError(f"File not found: {file_path}")
 
         filename = name or os.path.basename(file_path)
 
+        # Use multipart upload endpoint for better performance
         with open(file_path, "rb") as f:
-            content = f.read()
+            files = {"file": (filename, f)}
+            data = {"folder": folder}
 
-        return self.create_scenario_file(
-            name=filename,
-            content=content,
-            scenario_id=scenario_id,
-            team_id=team_id,
-            project_id=project_id,
-            description=description,
-            folder_id=folder_id,
-        )
+            response = self._make_request(
+                "POST",
+                f"/scenarios/{scenario_id}/files/upload",
+                files=files,
+                data=data,
+            )
 
-    def delete_scenario_file(self, file_id: str) -> Dict:
+        result = response.json()
+        return result.get("file", result)
+
+    def delete_scenario_file(
+        self, file_id: str, scenario_id: Optional[str] = None
+    ) -> Dict:
         """Delete a file by ID.
 
         Args:
             file_id: The unique identifier of the file to delete.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
 
         Returns:
             Confirmation response.
+
+        Raises:
+            DataMakerError: If scenario_id is not provided and not available in environment.
         """
-        response = self._make_request("DELETE", f"/scenario-files/{file_id}")
+        # Get scenario_id from environment if not provided
+        scenario_id = scenario_id or os.environ.get("DATAMAKER_SCENARIO_ID")
+
+        if not scenario_id:
+            raise DataMakerError(
+                "scenario_id is required. Either pass it as a parameter or set "
+                "DATAMAKER_SCENARIO_ID environment variable."
+            )
+
+        response = self._make_request(
+            "DELETE", f"/scenarios/{scenario_id}/files/{file_id}"
+        )
         return response.json()
 
     def read_file_by_path(
@@ -329,28 +399,30 @@ class ScenarioFilesClient(BaseClient):
         name: Optional[str] = None,
         description: Optional[str] = None,
         folder_id: Optional[str] = None,
+        folder: str = "uploads",
     ) -> Dict:
         """Convenience method to save a local file to workspace storage.
 
         This method simplifies uploading files by automatically pulling required
-        context (scenario_id, team_id, project_id) from environment variables
-        if they're not provided. This is especially useful in DataMaker sandbox
-        environments where these variables are pre-configured.
+        context (scenario_id) from environment variables if not provided.
+        This is especially useful in DataMaker sandbox environments where these
+        variables are pre-configured.
 
         Args:
             file_path: Path to the local file to save to workspace.
             scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
-            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
-            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID env var.
+            team_id: Optional team ID (deprecated, not used for multipart upload).
+            project_id: Optional project ID (deprecated, not used for multipart upload).
             name: Optional filename. If not provided, uses the original filename.
-            description: Optional description of the file.
-            folder_id: Optional folder ID to place the file in.
+            description: Optional description of the file (deprecated, not used for multipart upload).
+            folder_id: Optional folder ID (deprecated, not used for multipart upload).
+            folder: Folder to upload to ("uploads" or "outputs", default: "uploads").
 
         Returns:
             The created file metadata dictionary.
 
         Raises:
-            DataMakerError: If required IDs are not provided and not available in environment.
+            DataMakerError: If scenario_id is not provided and not available in environment.
 
         Example:
             >>> # In a DataMaker sandbox environment:
@@ -361,14 +433,11 @@ class ScenarioFilesClient(BaseClient):
             >>> # Or specify IDs explicitly:
             >>> result = dm.save_file(
             ...     "test_file.txt",
-            ...     scenario_id="scenario-123",
-            ...     team_id="team-456"
+            ...     scenario_id="scenario-123"
             ... )
         """
         # Get required IDs from environment if not provided
         scenario_id = scenario_id or os.environ.get("DATAMAKER_SCENARIO_ID")
-        team_id = team_id or os.environ.get("DATAMAKER_TEAM_ID")
-        project_id = project_id or os.environ.get("DATAMAKER_PROJECT_ID")
 
         if not scenario_id:
             raise DataMakerError(
@@ -376,18 +445,9 @@ class ScenarioFilesClient(BaseClient):
                 "DATAMAKER_SCENARIO_ID environment variable."
             )
 
-        if not team_id:
-            raise DataMakerError(
-                "team_id is required. Either pass it as a parameter or set "
-                "DATAMAKER_TEAM_ID environment variable."
-            )
-
         return self.upload_scenario_file_from_path(
             file_path=file_path,
             scenario_id=scenario_id,
-            team_id=team_id,
-            project_id=project_id,
             name=name,
-            description=description,
-            folder_id=folder_id,
+            folder=folder,
         )

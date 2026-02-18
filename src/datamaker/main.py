@@ -421,18 +421,45 @@ class DataMaker:
         """Get all files for a scenario or all accessible files."""
         return self._scenario_files.get_scenario_files(scenario_id)
 
-    def get_scenario_file(self, file_id: str):
-        """Get metadata for a specific file by ID."""
-        return self._scenario_files.get_scenario_file(file_id)
+    def get_scenario_file(self, file_id: str, scenario_id: Optional[str] = None):
+        """Get metadata for a specific file by ID.
 
-    def download_scenario_file(self, file_id: str):
-        """Download a file's content by ID."""
-        return self._scenario_files.download_scenario_file(file_id)
+        Args:
+            file_id: The unique identifier of the file.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
 
-    def download_scenario_file_to_path(self, file_id: str, destination_path: str):
-        """Download a file and save it to a local path."""
+        Returns:
+            File metadata dictionary with refreshed presigned URL.
+        """
+        return self._scenario_files.get_scenario_file(file_id, scenario_id)
+
+    def download_scenario_file(self, file_id: str, scenario_id: Optional[str] = None):
+        """Download a file's content by ID.
+
+        Args:
+            file_id: The unique identifier of the file.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+
+        Returns:
+            The file content as bytes.
+        """
+        return self._scenario_files.download_scenario_file(file_id, scenario_id)
+
+    def download_scenario_file_to_path(
+        self, file_id: str, destination_path: str, scenario_id: Optional[str] = None
+    ):
+        """Download a file and save it to a local path.
+
+        Args:
+            file_id: The unique identifier of the file.
+            destination_path: Local file path to save the downloaded content.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+
+        Returns:
+            The destination path where the file was saved.
+        """
         return self._scenario_files.download_scenario_file_to_path(
-            file_id, destination_path
+            file_id, destination_path, scenario_id
         )
 
     def create_scenario_file(
@@ -481,17 +508,19 @@ class DataMaker:
         name: Optional[str] = None,
         description: Optional[str] = None,
         folder_id: Optional[str] = None,
+        folder: str = "uploads",
     ):
         """Upload a file from a local path to a scenario.
 
         Args:
             file_path: Path to the local file to upload.
             scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
-            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
-            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID env var.
+            team_id: Optional team ID (deprecated, not used for multipart upload).
+            project_id: Optional project ID (deprecated, not used for multipart upload).
             name: Optional filename. If not provided, uses the original filename.
-            description: Optional description of the file.
-            folder_id: Optional folder ID to place the file in.
+            description: Optional description (deprecated, not used for multipart upload).
+            folder_id: Optional folder ID (deprecated, not used for multipart upload).
+            folder: Folder to upload to ("uploads" or "outputs", default: "uploads").
 
         Returns:
             The created file metadata dictionary.
@@ -504,11 +533,20 @@ class DataMaker:
             name=name,
             description=description,
             folder_id=folder_id,
+            folder=folder,
         )
 
-    def delete_scenario_file(self, file_id: str):
-        """Delete a file by ID."""
-        return self._scenario_files.delete_scenario_file(file_id)
+    def delete_scenario_file(self, file_id: str, scenario_id: Optional[str] = None):
+        """Delete a file by ID.
+
+        Args:
+            file_id: The unique identifier of the file to delete.
+            scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
+
+        Returns:
+            Confirmation response.
+        """
+        return self._scenario_files.delete_scenario_file(file_id, scenario_id)
 
     def read_file_by_path(
         self,
@@ -575,42 +613,41 @@ class DataMaker:
         name: Optional[str] = None,
         description: Optional[str] = None,
         folder_id: Optional[str] = None,
+        folder: str = "uploads",
     ) -> Dict:
         """Convenience method to save a local file to workspace storage.
 
         This method simplifies uploading files by automatically pulling required
-        context (scenario_id, team_id, project_id) from environment variables
-        if they're not provided. This is especially useful in DataMaker sandbox
-        environments where these variables are pre-configured.
+        context (scenario_id) from environment variables if not provided.
+        This is especially useful in DataMaker sandbox environments where these
+        variables are pre-configured.
 
         Args:
             file_path: Path to the local file to save to workspace.
             scenario_id: Optional scenario ID. Falls back to DATAMAKER_SCENARIO_ID env var.
-            team_id: Optional team ID. Falls back to DATAMAKER_TEAM_ID env var.
-            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID env var.
+            team_id: Optional team ID (deprecated, not used).
+            project_id: Optional project ID (deprecated, not used).
             name: Optional filename. If not provided, uses the original filename.
-            description: Optional description of the file.
-            folder_id: Optional folder ID to place the file in.
+            description: Optional description (deprecated, not used).
+            folder_id: Optional folder ID (deprecated, not used).
+            folder: Folder to upload to ("uploads" or "outputs", default: "uploads").
 
         Returns:
             The created file metadata dictionary.
 
         Raises:
-            DataMakerError: If required IDs are not provided and not available in environment.
+            DataMakerError: If scenario_id is not provided and not available in environment.
 
         Example:
             >>> # In a DataMaker sandbox environment:
             >>> dm = DataMaker()
-            >>> with open("test_file.txt", "w") as f:
-            ...     f.write("Hello from the sandbox!")
             >>> result = dm.save_file("test_file.txt")
             >>> print(f"File saved: {result['name']}")
 
             >>> # Or specify IDs explicitly:
             >>> result = dm.save_file(
             ...     "test_file.txt",
-            ...     scenario_id="scenario-123",
-            ...     team_id="team-456"
+            ...     scenario_id="scenario-123"
             ... )
         """
         return self._scenario_files.save_file(
@@ -621,6 +658,7 @@ class DataMaker:
             name=name,
             description=description,
             folder_id=folder_id,
+            folder=folder,
         )
 
     # =================== PROPERTY ACCESS TO CLIENTS ===================
