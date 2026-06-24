@@ -469,6 +469,14 @@ export const METHOD_SUGGESTIONS: DataMakerMethod[] = [
     sortText: "delete_endpoint",
   },
   {
+    label: "resolve_endpoint_auth",
+    kind: CompletionItemKind.Method,
+    insertText: "resolve_endpoint_auth(${1:endpoint_id}: str)",
+    documentation: "Resolve an endpoint's real, decrypted credentials (Authorization header + Basic username/password). See EndpointsClient for details.",
+    detail: "Method: resolve_endpoint_auth",
+    sortText: "resolve_endpoint_auth",
+  },
+  {
     label: "get_template_folders",
     kind: CompletionItemKind.Method,
     insertText: "get_template_folders()",
