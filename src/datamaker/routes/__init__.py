@@ -12,6 +12,7 @@ from .custom_types import CustomDataTypesClient, EndpointFoldersClient, Endpoint
 from .folders_and_utils import TemplateFoldersClient, ShortcutsClient, FeedbackClient
 from .export_and_validation import ExportClient, ValidationClient
 from .scenario_files import ScenarioFilesClient
+from .sets import SetsClient
 
 __all__ = [
     "BaseClient",
@@ -32,4 +33,5 @@ __all__ = [
     "ExportClient",
     "ValidationClient",
     "ScenarioFilesClient",
+    "SetsClient",
 ]

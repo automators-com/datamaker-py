@@ -318,6 +318,39 @@ Export data to a database.
 **validate_api_key()**
 Test API key authentication.
 
+### Set Management
+
+A "set" is a persistent, named snapshot of rows (e.g. a regression dataset or a
+shared fixture). Sets are scoped to a project/team and appear on the DataMaker
+Sets page.
+
+**get_sets(project_id=None)**
+Get all saved sets. Pass `project_id` (or set `DATAMAKER_PROJECT_ID`) to scope
+the listing to one project.
+
+**get_set(set_id)**
+Get a single set by ID, including its full saved rows in `data`.
+
+**create_set(name, data=None, description=None, row_count=None, project_id=None)**
+Create (save) a new set. `data` is typically a list of row dicts.
+
+**update_set(set_id, name=None, description=None, data=None, row_count=None)**
+Update a saved set. Only the provided fields are changed.
+
+**delete_set(set_id)**
+Delete a saved set by ID.
+
+**save_set(name, data, description=None, project_id=None)**
+Convenience method to save rows as a named set. Pulls project context from
+`DATAMAKER_PROJECT_ID` when not provided.
+
+```python
+dm = DataMaker()
+rows = dm.generate(template)
+result = dm.save_set("nightly-regression", rows)
+print(f"Saved set: {result['name']} ({result['rowCount']} rows)")
+```
+
 ## Field Types Reference
 
 ### Basic Types

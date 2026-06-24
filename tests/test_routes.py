@@ -1,5 +1,6 @@
 """Tests for the route client classes."""
 
+import os
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from src.datamaker.routes.base import BaseClient
@@ -10,6 +11,7 @@ from src.datamaker.routes.connections import ConnectionsClient
 from src.datamaker.routes.projects import ProjectsClient
 from src.datamaker.routes.users import UsersClient
 from src.datamaker.routes.teams import TeamsClient, TeamMembersClient
+from src.datamaker.routes.sets import SetsClient
 from src.datamaker.error import DataMakerError
 
 
@@ -503,3 +505,162 @@ class TestTeamMembersClient:
             "POST", "/teamMembers/invite", json=invite_data
         )
         assert result == {"success": True, "inviteId": "invite-1"}
+
+
+class TestSetsClient:
+    """Test cases for the SetsClient class."""
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_get_sets(self, mock_make_request, api_key):
+        """Test getting all sets (unscoped when no project id)."""
+        mock_response = Mock()
+        mock_response.json.return_value = [{"id": "1", "name": "Set 1"}]
+        mock_make_request.return_value = mock_response
+
+        # Ensure no env var bleeds into the scope for this assertion.
+        with patch.dict("os.environ", {}, clear=False):
+            os.environ.pop("DATAMAKER_PROJECT_ID", None)
+            client = SetsClient(api_key=api_key)
+            result = client.get_sets()
+
+        mock_make_request.assert_called_once_with("GET", "/sets")
+        assert result == [{"id": "1", "name": "Set 1"}]
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_get_sets_with_project_id(self, mock_make_request, api_key):
+        """Test getting sets scoped to a project id."""
+        mock_response = Mock()
+        mock_response.json.return_value = [{"id": "1", "name": "Set 1"}]
+        mock_make_request.return_value = mock_response
+
+        client = SetsClient(api_key=api_key)
+        result = client.get_sets(project_id="proj-1")
+
+        mock_make_request.assert_called_once_with("GET", "/sets?projectId=proj-1")
+        assert result == [{"id": "1", "name": "Set 1"}]
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_get_set(self, mock_make_request, api_key):
+        """Test getting a single set by id."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"id": "1", "name": "Set 1", "data": []}
+        mock_make_request.return_value = mock_response
+
+        client = SetsClient(api_key=api_key)
+        result = client.get_set("1")
+
+        mock_make_request.assert_called_once_with("GET", "/sets/1")
+        assert result == {"id": "1", "name": "Set 1", "data": []}
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_create_set(self, mock_make_request, api_key):
+        """Test creating a set with rows + project id."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"id": "1", "name": "New Set", "rowCount": 2}
+        mock_make_request.return_value = mock_response
+
+        client = SetsClient(api_key=api_key)
+        rows = [{"a": 1}, {"a": 2}]
+        result = client.create_set(
+            name="New Set",
+            data=rows,
+            description="A test set",
+            project_id="proj-1",
+        )
+
+        expected_data = {
+            "name": "New Set",
+            "data": rows,
+            "description": "A test set",
+            "projectId": "proj-1",
+        }
+        mock_make_request.assert_called_once_with("POST", "/sets", json=expected_data)
+        assert result == {"id": "1", "name": "New Set", "rowCount": 2}
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_create_set_minimal(self, mock_make_request, api_key):
+        """Test creating a set with only a name (no optional fields)."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"id": "1", "name": "Empty Set"}
+        mock_make_request.return_value = mock_response
+
+        with patch.dict("os.environ", {}, clear=False):
+            os.environ.pop("DATAMAKER_PROJECT_ID", None)
+            client = SetsClient(api_key=api_key)
+            result = client.create_set(name="Empty Set")
+
+        mock_make_request.assert_called_once_with(
+            "POST", "/sets", json={"name": "Empty Set"}
+        )
+        assert result == {"id": "1", "name": "Empty Set"}
+
+    def test_create_set_requires_name(self, api_key):
+        """Test that creating a set without a name raises an error."""
+        client = SetsClient(api_key=api_key)
+        with pytest.raises(DataMakerError, match="name is required"):
+            client.create_set(name="")
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_create_set_uses_env_project_id(self, mock_make_request, api_key):
+        """Test that create_set falls back to DATAMAKER_PROJECT_ID."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"id": "1", "name": "Env Set"}
+        mock_make_request.return_value = mock_response
+
+        with patch.dict("os.environ", {"DATAMAKER_PROJECT_ID": "env-proj"}):
+            client = SetsClient(api_key=api_key)
+            client.create_set(name="Env Set", data=[{"x": 1}])
+
+        expected_data = {"name": "Env Set", "data": [{"x": 1}], "projectId": "env-proj"}
+        mock_make_request.assert_called_once_with("POST", "/sets", json=expected_data)
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_update_set(self, mock_make_request, api_key):
+        """Test updating a set sends only the provided fields."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"id": "1", "name": "Renamed"}
+        mock_make_request.return_value = mock_response
+
+        client = SetsClient(api_key=api_key)
+        result = client.update_set("1", name="Renamed", data=[{"a": 1}])
+
+        expected_data = {"name": "Renamed", "data": [{"a": 1}]}
+        mock_make_request.assert_called_once_with(
+            "PATCH", "/sets/1", json=expected_data
+        )
+        assert result == {"id": "1", "name": "Renamed"}
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_delete_set(self, mock_make_request, api_key):
+        """Test deleting a set by id."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"message": "Set deleted"}
+        mock_make_request.return_value = mock_response
+
+        client = SetsClient(api_key=api_key)
+        result = client.delete_set("1")
+
+        mock_make_request.assert_called_once_with("DELETE", "/sets/1")
+        assert result == {"message": "Set deleted"}
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_save_set(self, mock_make_request, api_key):
+        """Test the save_set convenience method delegates to create_set."""
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "id": "1",
+            "name": "Snapshot",
+            "rowCount": 1,
+        }
+        mock_make_request.return_value = mock_response
+
+        client = SetsClient(api_key=api_key)
+        result = client.save_set("Snapshot", [{"a": 1}], project_id="proj-1")
+
+        expected_data = {
+            "name": "Snapshot",
+            "data": [{"a": 1}],
+            "projectId": "proj-1",
+        }
+        mock_make_request.assert_called_once_with("POST", "/sets", json=expected_data)
+        assert result["rowCount"] == 1

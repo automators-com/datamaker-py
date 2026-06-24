@@ -21,6 +21,7 @@ from .routes.folders_and_utils import (
 )
 from .routes.export_and_validation import ExportClient, ValidationClient
 from .routes.scenario_files import ScenarioFilesClient
+from .routes.sets import SetsClient
 
 load_dotenv()
 
@@ -68,6 +69,7 @@ class DataMaker:
         self._scenario_files = ScenarioFilesClient(
             api_key, default_headers, base_url, verify
         )
+        self._sets = SetsClient(api_key, default_headers, base_url, verify)
 
         # Maintain backward compatibility
         self.api_key = self._generation.api_key
@@ -661,6 +663,131 @@ class DataMaker:
             folder=folder,
         )
 
+    # =================== SET METHODS ===================
+    def get_sets(self, project_id: Optional[str] = None):
+        """Get all saved sets for the caller's project/team scope.
+
+        Args:
+            project_id: Optional project ID to scope the listing to. Falls back
+                to the DATAMAKER_PROJECT_ID env var.
+
+        Returns:
+            A list of set metadata dictionaries.
+        """
+        return self._sets.get_sets(project_id)
+
+    def get_set(self, set_id: str):
+        """Get a single saved set by ID, including its full rows payload.
+
+        Args:
+            set_id: The unique identifier of the set.
+
+        Returns:
+            The set dictionary (including its saved rows in ``data``).
+        """
+        return self._sets.get_set(set_id)
+
+    def create_set(
+        self,
+        name: str,
+        data=None,
+        description: Optional[str] = None,
+        row_count: Optional[int] = None,
+        project_id: Optional[str] = None,
+    ):
+        """Create (save) a new set.
+
+        Args:
+            name: A name for the saved set.
+            data: The rows payload to save - typically a list of row dicts.
+            description: Optional short description of what the set captures.
+            row_count: Optional explicit row count (derived from data otherwise).
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.
+
+        Returns:
+            The created set dictionary.
+        """
+        return self._sets.create_set(
+            name=name,
+            data=data,
+            description=description,
+            row_count=row_count,
+            project_id=project_id,
+        )
+
+    def update_set(
+        self,
+        set_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        data=None,
+        row_count: Optional[int] = None,
+    ):
+        """Update a saved set.
+
+        Args:
+            set_id: The unique identifier of the set to update.
+            name: New name for the set.
+            description: New description.
+            data: Replacement rows payload.
+            row_count: Explicit row count override.
+
+        Returns:
+            The updated set dictionary.
+        """
+        return self._sets.update_set(
+            set_id,
+            name=name,
+            description=description,
+            data=data,
+            row_count=row_count,
+        )
+
+    def delete_set(self, set_id: str):
+        """Delete a saved set by ID.
+
+        Args:
+            set_id: The unique identifier of the set to delete.
+
+        Returns:
+            Confirmation response.
+        """
+        return self._sets.delete_set(set_id)
+
+    def save_set(
+        self,
+        name: str,
+        data,
+        description: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ):
+        """Convenience method to save rows as a named set.
+
+        Project context is pulled from DATAMAKER_PROJECT_ID when not provided,
+        which is convenient inside DataMaker sandbox environments.
+
+        Args:
+            name: A name for the saved set.
+            data: The rows to save - typically a list of row dicts.
+            description: Optional short description of what the set captures.
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.
+
+        Returns:
+            The created set dictionary.
+
+        Example:
+            >>> dm = DataMaker()
+            >>> rows = dm.generate(template)
+            >>> result = dm.save_set("nightly-regression", rows)
+            >>> print(f"Saved set: {result['name']} ({result['rowCount']} rows)")
+        """
+        return self._sets.save_set(
+            name=name,
+            data=data,
+            description=description,
+            project_id=project_id,
+        )
+
     # =================== PROPERTY ACCESS TO CLIENTS ===================
     # For advanced users who want direct access to specific clients
     @property
@@ -747,3 +874,8 @@ class DataMaker:
     def scenario_files(self):
         """Access to scenario files client."""
         return self._scenario_files
+
+    @property
+    def sets(self):
+        """Access to sets client."""
+        return self._sets
