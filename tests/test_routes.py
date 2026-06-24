@@ -12,6 +12,7 @@ from src.datamaker.routes.projects import ProjectsClient
 from src.datamaker.routes.users import UsersClient
 from src.datamaker.routes.teams import TeamsClient, TeamMembersClient
 from src.datamaker.routes.sets import SetsClient
+from src.datamaker.routes.custom_types import EndpointsClient
 from src.datamaker.error import DataMakerError
 
 
@@ -664,3 +665,28 @@ class TestSetsClient:
         }
         mock_make_request.assert_called_once_with("POST", "/sets", json=expected_data)
         assert result["rowCount"] == 1
+
+
+class TestEndpointsClient:
+    """Test cases for the EndpointsClient class."""
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_resolve_endpoint_auth(self, mock_make_request, api_key):
+        """Test resolving an endpoint's real, decrypted credentials."""
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "authType": "Basic",
+            "authHeader": "Basic dXNlcjpwYXNz",
+            "fetchCsrf": None,
+            "basic": {"username": "user", "password": "pass"},
+        }
+        mock_make_request.return_value = mock_response
+
+        client = EndpointsClient(api_key=api_key)
+        result = client.resolve_endpoint_auth("endpoint-1")
+
+        mock_make_request.assert_called_once_with(
+            "POST", "/endpoints/auth-resolve", json={"endpointId": "endpoint-1"}
+        )
+        assert result["authType"] == "Basic"
+        assert result["basic"]["username"] == "user"

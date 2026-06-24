@@ -249,6 +249,9 @@ Update an endpoint.
 **delete_endpoint(endpoint_id)**
 Delete an endpoint.
 
+**resolve_endpoint_auth(endpoint_id)**
+Resolve an endpoint's real, decrypted credentials. Unlike get_endpoint(), whose auth fields are masked (`*******`), this returns the decrypted Authorization header (Basic decrypted / OAuth2 token exchanged) plus, for Basic auth, the real username/password. Returns a dict: `{authType, authHeader, fetchCsrf, basic}` (`basic` is `null` for non-Basic auth).
+
 ### Endpoint Folders
 
 **get_endpoint_folders()**

@@ -84,3 +84,17 @@ class EndpointsClient(BaseClient):
         """Delete an endpoint."""
         response = self._make_request("DELETE", f"/endpoints/{endpoint_id}")
         return response.json()
+
+    def resolve_endpoint_auth(self, endpoint_id: str) -> Dict:
+        """Resolve an endpoint's real, usable credentials.
+
+        Unlike get_endpoint(), whose auth fields are masked (`*******`), this
+        returns the decrypted Authorization header (Basic decrypted / OAuth2
+        token exchanged) plus, for Basic auth, the real username/password.
+
+        Returns a dict: {authType, authHeader, fetchCsrf, basic}.
+        """
+        response = self._make_request(
+            "POST", "/endpoints/auth-resolve", json={"endpointId": endpoint_id}
+        )
+        return response.json()

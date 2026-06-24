@@ -353,6 +353,11 @@ class DataMaker:
         """Delete an endpoint."""
         return self._endpoints.delete_endpoint(endpoint_id)
 
+    def resolve_endpoint_auth(self, endpoint_id: str):
+        """Resolve an endpoint's real, decrypted credentials (Authorization
+        header + Basic username/password). See EndpointsClient for details."""
+        return self._endpoints.resolve_endpoint_auth(endpoint_id)
+
     # =================== TEMPLATE FOLDER METHODS ===================
     def get_template_folders(self):
         """Get all template folders."""
