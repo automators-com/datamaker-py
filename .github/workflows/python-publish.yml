@@ -19,6 +19,10 @@ jobs:
   release-build:
     runs-on: ubuntu-latest
 
+    # Needed so we can attach the built wheel + sdist to the GitHub release.
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -29,11 +33,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.14"
-      
+
       - name: Install dependencies
         run: |
           uv sync --all-extras --dev
-          
+
       - name: Build release distributions
         run: |
           uv build
@@ -44,8 +48,25 @@ jobs:
           name: release-dists
           path: dist/
 
+      # Attach the wheel (and sdist) to the GitHub release so consumers can pin a
+      # direct `.whl` URL, e.g.
+      #   datamaker-py @ https://github.com/automators-com/datamaker-py/releases/download/<tag>/datamaker_py-<ver>-py3-none-any.whl
+      # Because the URL ends in `.whl`, uv/pip install it as a wheel with NO build
+      # step (the DataMaker desktop runner needs this to provision its venv fully
+      # offline). The repo is public, so the asset URL needs no auth.
+      - name: Attach distributions to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" dist/*.whl dist/*.tar.gz --clobber
+
   pypi-publish:
     runs-on: ubuntu-latest
+    # Opt-in: PyPI trusted publishing must be configured (project registered on
+    # PyPI with this repo's `pypi` environment as a trusted publisher) before
+    # this can succeed. Until then it's disabled so releases don't fail on it.
+    # Enable by setting the repo variable PUBLISH_TO_PYPI=true.
+    if: ${{ vars.PUBLISH_TO_PYPI == 'true' }}
     needs:
       - release-build
     permissions:
