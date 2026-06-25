@@ -1,5 +1,21 @@
-# On a published GitHub release, build the package and attach the wheel + sdist
-# as release assets so consumers can pin a direct `.whl` URL (no PyPI involved).
+# On a published GitHub release: build the package, publish it to PyPI (via
+# trusted publishing), and also attach the wheel + sdist to the GitHub release.
+#
+# PyPI is the source of truth consumers resolve from (`datamaker-py>=x.y`), which
+# is what lets the DataMaker desktop runner install it offline from its bundled
+# wheelhouse - a registry/name-versioned dep is satisfiable from --find-links,
+# whereas a direct-URL pin is not. The GitHub release assets are kept as a
+# convenient, no-auth fallback URL.
+#
+# ONE-TIME SETUP (PyPI side, required before the first publish succeeds):
+#   On pypi.org → Account → Publishing → add a "pending publisher":
+#     PyPI Project Name: datamaker-py
+#     Owner:             automators-com
+#     Repository:        datamaker-py
+#     Workflow name:     python-publish.yml
+#     Environment:       pypi
+#   The first successful run then creates the project. No API token/secret is
+#   stored - auth is OIDC via the `id-token: write` permission below.
 
 name: Upload Python Package
 
@@ -33,14 +49,38 @@ jobs:
         run: |
           uv build
 
-      # Attach the wheel (and sdist) to the GitHub release so consumers can pin a
-      # direct `.whl` URL, e.g.
-      #   datamaker-py @ https://github.com/automators-com/datamaker-py/releases/download/<tag>/datamaker_py-<ver>-py3-none-any.whl
-      # Because the URL ends in `.whl`, uv/pip install it as a wheel with NO build
-      # step (the DataMaker desktop runner needs this to provision its venv fully
-      # offline). The repo is public, so the asset URL needs no auth.
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+
+      # Attach the wheel (and sdist) to the GitHub release as a no-auth fallback.
       - name: Attach distributions to the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "${{ github.event.release.tag_name }}" dist/*.whl dist/*.tar.gz --clobber
+
+  pypi-publish:
+    runs-on: ubuntu-latest
+    needs:
+      - release-build
+    permissions:
+      # Mandatory for PyPI trusted publishing (OIDC) - no API token needed.
+      id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/datamaker-py
+
+    steps:
+      - name: Retrieve release distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+
+      - name: Publish release distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
