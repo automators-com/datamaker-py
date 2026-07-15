@@ -724,6 +724,46 @@ export const METHOD_SUGGESTIONS: DataMakerMethod[] = [
     detail: "Method: save_set",
     sortText: "save_set",
   },
+  {
+    label: "get_keymaps",
+    kind: CompletionItemKind.Method,
+    insertText: "get_keymaps(${1:project_id}: Optional[str])",
+    documentation: "List key maps for a project: one row per (mapName, object).  Args:     project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.  Returns:     A list of dictionaries with mapName, object, entryCount, updatedAt.",
+    detail: "Method: get_keymaps",
+    sortText: "get_keymaps",
+  },
+  {
+    label: "keymap_put",
+    kind: CompletionItemKind.Method,
+    insertText: "keymap_put(${1:map_name}: str, ${2:object}: str, ${3:entries}: Dict[str, str], ${4:run_id}: Optional[str], ${5:project_id}: Optional[str])",
+    documentation: "Record old-to-new key mappings in a named key map (batch upsert).  Use after creating records in a target system to remember which source key became which target key. Writing the same old key again overwrites its new key. Batches are capped at 5000 entries per call.  Args:     map_name: Logical map name, e.g. \"sap-material-migration\".     object: The domain object type, e.g. \"Material\".     entries: Mapping of old key to new key.     run_id: Optional run/job id that minted these keys.     project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.  Returns:     A dictionary with mapName, object and upserted (count).  Example:     >>> dm = DataMaker()     >>> dm.keymap_put(     ...     \"sap-material-migration\",     ...     \"Material\",     ...     {\"MAT-001\": \"700001\", \"MAT-002\": \"700002\"},     ... )",
+    detail: "Method: keymap_put",
+    sortText: "keymap_put",
+  },
+  {
+    label: "keymap_lookup",
+    kind: CompletionItemKind.Method,
+    insertText: "keymap_lookup(${1:map_name}: str, ${2:object}: str, ${3:old_keys}: List[str], ${4:project_id}: Optional[str])",
+    documentation: "Translate source-system keys to target-system keys (batch lookup).  Use when generating or migrating data that references records migrated earlier. Lookups are capped at 5000 keys per call.  Args:     map_name: The key map to look up in.     object: The domain object type, e.g. \"Material\".     old_keys: Source-system keys to translate.     project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.  Returns:     A dictionary with mappings (found) and missing (no mapping yet).  Example:     >>> dm = DataMaker()     >>> result = dm.keymap_lookup(     ...     \"sap-material-migration\", \"Material\", [\"MAT-001\", \"MAT-999\"]     ... )",
+    detail: "Method: keymap_lookup",
+    sortText: "keymap_lookup",
+  },
+  {
+    label: "get_keymap_entries",
+    kind: CompletionItemKind.Method,
+    insertText: "get_keymap_entries(${1:map_name}: str, ${2:object}: Optional[str], ${3:page}: int, ${4:page_size}: int, ${5:project_id}: Optional[str])",
+    documentation: "Fetch a page of a key map's entries for inspection.  Args:     map_name: The key map to read.     object: Optional domain object type filter.     page: 1-based page number.     page_size: Entries per page (server-capped at 500).     project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.  Returns:     A dictionary with entries, total, page and pageSize.",
+    detail: "Method: get_keymap_entries",
+    sortText: "get_keymap_entries",
+  },
+  {
+    label: "delete_keymap",
+    kind: CompletionItemKind.Method,
+    insertText: "delete_keymap(${1:map_name}: str, ${2:object}: Optional[str], ${3:project_id}: Optional[str])",
+    documentation: "Drop a key map (all its entries), optionally one object type only.  Args:     map_name: The key map to delete.     object: Optional domain object type to scope the delete to.     project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.  Returns:     Confirmation response with the deleted entry count.",
+    detail: "Method: delete_keymap",
+    sortText: "delete_keymap",
+  },
 ];
 
 export const FIELD_TYPE_SUGGESTIONS: DataMakerFieldType[] = [
