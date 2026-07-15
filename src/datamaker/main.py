@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from .routes.base import BaseClient
 from .routes.generation import GenerationClient
 from .routes.templates import TemplatesClient
@@ -22,6 +22,7 @@ from .routes.folders_and_utils import (
 from .routes.export_and_validation import ExportClient, ValidationClient
 from .routes.scenario_files import ScenarioFilesClient
 from .routes.sets import SetsClient
+from .routes.keymaps import KeyMapsClient
 
 load_dotenv()
 
@@ -70,6 +71,7 @@ class DataMaker:
             api_key, default_headers, base_url, verify
         )
         self._sets = SetsClient(api_key, default_headers, base_url, verify)
+        self._keymaps = KeyMapsClient(api_key, default_headers, base_url, verify)
 
         # Maintain backward compatibility
         self.api_key = self._generation.api_key
@@ -793,6 +795,141 @@ class DataMaker:
             project_id=project_id,
         )
 
+    def get_keymaps(self, project_id: Optional[str] = None):
+        """List key maps for a project: one row per (mapName, object).
+
+        Args:
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.
+
+        Returns:
+            A list of dictionaries with mapName, object, entryCount, updatedAt.
+        """
+        return self._keymaps.get_keymaps(project_id)
+
+    def keymap_put(
+        self,
+        map_name: str,
+        object: str,
+        entries: Dict[str, str],
+        run_id: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ):
+        """Record old-to-new key mappings in a named key map (batch upsert).
+
+        Use after creating records in a target system to remember which source
+        key became which target key. Writing the same old key again overwrites
+        its new key. Batches are capped at 5000 entries per call.
+
+        Args:
+            map_name: Logical map name, e.g. "sap-material-migration".
+            object: The domain object type, e.g. "Material".
+            entries: Mapping of old key to new key.
+            run_id: Optional run/job id that minted these keys.
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.
+
+        Returns:
+            A dictionary with mapName, object and upserted (count).
+
+        Example:
+            >>> dm = DataMaker()
+            >>> dm.keymap_put(
+            ...     "sap-material-migration",
+            ...     "Material",
+            ...     {"MAT-001": "700001", "MAT-002": "700002"},
+            ... )
+        """
+        return self._keymaps.keymap_put(
+            map_name=map_name,
+            object=object,
+            entries=entries,
+            run_id=run_id,
+            project_id=project_id,
+        )
+
+    def keymap_lookup(
+        self,
+        map_name: str,
+        object: str,
+        old_keys: List[str],
+        project_id: Optional[str] = None,
+    ):
+        """Translate source-system keys to target-system keys (batch lookup).
+
+        Use when generating or migrating data that references records migrated
+        earlier. Lookups are capped at 5000 keys per call.
+
+        Args:
+            map_name: The key map to look up in.
+            object: The domain object type, e.g. "Material".
+            old_keys: Source-system keys to translate.
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.
+
+        Returns:
+            A dictionary with mappings (found) and missing (no mapping yet).
+
+        Example:
+            >>> dm = DataMaker()
+            >>> result = dm.keymap_lookup(
+            ...     "sap-material-migration", "Material", ["MAT-001", "MAT-999"]
+            ... )
+        """
+        return self._keymaps.keymap_lookup(
+            map_name=map_name,
+            object=object,
+            old_keys=old_keys,
+            project_id=project_id,
+        )
+
+    def get_keymap_entries(
+        self,
+        map_name: str,
+        object: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 100,
+        project_id: Optional[str] = None,
+    ):
+        """Fetch a page of a key map's entries for inspection.
+
+        Args:
+            map_name: The key map to read.
+            object: Optional domain object type filter.
+            page: 1-based page number.
+            page_size: Entries per page (server-capped at 500).
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.
+
+        Returns:
+            A dictionary with entries, total, page and pageSize.
+        """
+        return self._keymaps.get_keymap_entries(
+            map_name=map_name,
+            object=object,
+            page=page,
+            page_size=page_size,
+            project_id=project_id,
+        )
+
+    def delete_keymap(
+        self,
+        map_name: str,
+        object: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ):
+        """Drop a key map (all its entries), optionally one object type only.
+
+        Args:
+            map_name: The key map to delete.
+            object: Optional domain object type to scope the delete to.
+            project_id: Optional project ID. Falls back to DATAMAKER_PROJECT_ID.
+
+        Returns:
+            Confirmation response with the deleted entry count.
+        """
+        return self._keymaps.delete_keymap(
+            map_name=map_name,
+            object=object,
+            project_id=project_id,
+        )
+
     # =================== PROPERTY ACCESS TO CLIENTS ===================
     # For advanced users who want direct access to specific clients
     @property
@@ -884,3 +1021,8 @@ class DataMaker:
     def sets(self):
         """Access to sets client."""
         return self._sets
+
+    @property
+    def keymaps(self):
+        """Access to key maps client."""
+        return self._keymaps

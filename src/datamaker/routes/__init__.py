@@ -13,6 +13,7 @@ from .folders_and_utils import TemplateFoldersClient, ShortcutsClient, FeedbackC
 from .export_and_validation import ExportClient, ValidationClient
 from .scenario_files import ScenarioFilesClient
 from .sets import SetsClient
+from .keymaps import KeyMapsClient
 
 __all__ = [
     "BaseClient",
@@ -34,4 +35,5 @@ __all__ = [
     "ValidationClient",
     "ScenarioFilesClient",
     "SetsClient",
+    "KeyMapsClient",
 ]

@@ -12,6 +12,7 @@ from src.datamaker.routes.projects import ProjectsClient
 from src.datamaker.routes.users import UsersClient
 from src.datamaker.routes.teams import TeamsClient, TeamMembersClient
 from src.datamaker.routes.sets import SetsClient
+from src.datamaker.routes.keymaps import KeyMapsClient
 from src.datamaker.routes.custom_types import EndpointsClient
 from src.datamaker.error import DataMakerError
 
@@ -690,3 +691,134 @@ class TestEndpointsClient:
         )
         assert result["authType"] == "Basic"
         assert result["basic"]["username"] == "user"
+
+class TestKeyMapsClient:
+    """Test cases for the KeyMapsClient class."""
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_get_keymaps_with_project_id(self, mock_make_request, api_key):
+        """Test listing key maps scoped to a project id."""
+        mock_response = Mock()
+        mock_response.json.return_value = [
+            {"mapName": "m1", "object": "Material", "entryCount": 2}
+        ]
+        mock_make_request.return_value = mock_response
+
+        client = KeyMapsClient(api_key=api_key)
+        result = client.get_keymaps(project_id="proj-1")
+
+        mock_make_request.assert_called_once_with("GET", "/keymaps?projectId=proj-1")
+        assert result == [{"mapName": "m1", "object": "Material", "entryCount": 2}]
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_keymap_put(self, mock_make_request, api_key):
+        """Test batch-upserting key map entries."""
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "mapName": "sap-material-migration",
+            "object": "Material",
+            "upserted": 2,
+        }
+        mock_make_request.return_value = mock_response
+
+        client = KeyMapsClient(api_key=api_key)
+        result = client.keymap_put(
+            "sap-material-migration",
+            "Material",
+            {"MAT-001": "700001", "MAT-002": "700002"},
+            run_id="run-1",
+            project_id="proj-1",
+        )
+
+        mock_make_request.assert_called_once_with(
+            "POST",
+            "/keymaps/entries",
+            json={
+                "mapName": "sap-material-migration",
+                "object": "Material",
+                "entries": [
+                    {"oldKey": "MAT-001", "newKey": "700001"},
+                    {"oldKey": "MAT-002", "newKey": "700002"},
+                ],
+                "runId": "run-1",
+                "projectId": "proj-1",
+            },
+        )
+        assert result["upserted"] == 2
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_keymap_put_requires_entries(self, mock_make_request, api_key):
+        """Test that an empty entries dict raises."""
+        client = KeyMapsClient(api_key=api_key)
+        with pytest.raises(DataMakerError):
+            client.keymap_put("m1", "Material", {})
+        mock_make_request.assert_not_called()
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_keymap_lookup(self, mock_make_request, api_key):
+        """Test batch key lookup returns mappings and missing keys."""
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "mapName": "m1",
+            "object": "Material",
+            "mappings": {"MAT-001": "700001"},
+            "missing": ["MAT-999"],
+        }
+        mock_make_request.return_value = mock_response
+
+        client = KeyMapsClient(api_key=api_key)
+        result = client.keymap_lookup(
+            "m1", "Material", ["MAT-001", "MAT-999"], project_id="proj-1"
+        )
+
+        mock_make_request.assert_called_once_with(
+            "POST",
+            "/keymaps/lookup",
+            json={
+                "mapName": "m1",
+                "object": "Material",
+                "oldKeys": ["MAT-001", "MAT-999"],
+                "projectId": "proj-1",
+            },
+        )
+        assert result["mappings"] == {"MAT-001": "700001"}
+        assert result["missing"] == ["MAT-999"]
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_get_keymap_entries(self, mock_make_request, api_key):
+        """Test paginated entry inspection with an object filter."""
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "mapName": "m1",
+            "page": 1,
+            "pageSize": 50,
+            "total": 1,
+            "entries": [{"object": "Material", "oldKey": "a", "newKey": "b"}],
+        }
+        mock_make_request.return_value = mock_response
+
+        client = KeyMapsClient(api_key=api_key)
+        result = client.get_keymap_entries(
+            "m1", object="Material", page=1, page_size=50, project_id="proj-1"
+        )
+
+        mock_make_request.assert_called_once_with(
+            "GET",
+            "/keymaps/m1/entries?page=1&pageSize=50&object=Material&projectId=proj-1",
+        )
+        assert result["total"] == 1
+
+    @patch("src.datamaker.routes.base.BaseClient._make_request")
+    def test_delete_keymap(self, mock_make_request, api_key):
+        """Test dropping a key map scoped to one object type."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"message": "Key map deleted", "deleted": 5}
+        mock_make_request.return_value = mock_response
+
+        client = KeyMapsClient(api_key=api_key)
+        result = client.delete_keymap("m1", object="Material", project_id="proj-1")
+
+        mock_make_request.assert_called_once_with(
+            "DELETE", "/keymaps/m1?object=Material&projectId=proj-1"
+        )
+        assert result["deleted"] == 5
