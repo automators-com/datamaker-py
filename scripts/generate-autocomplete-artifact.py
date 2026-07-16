@@ -8,6 +8,7 @@ for autocomplete support in the datamaker application.
 
 import ast
 import sys
+from difflib import unified_diff
 from pathlib import Path
 from typing import Dict, List, Any
 import importlib.util
@@ -307,9 +308,9 @@ export const ALL_SUGGESTIONS: CompletionItem[] = [
         return text.replace('"', '\\"').replace('\n', ' ').strip()
 
 
-def get_version() -> str:
+def get_version(repo_root: Path = None) -> str:
     """Get the SDK version from pyproject.toml."""
-    pyproject = Path("pyproject.toml")
+    pyproject = (repo_root / "pyproject.toml") if repo_root else Path("pyproject.toml")
     if pyproject.exists():
         with open(pyproject, "r", encoding="utf-8") as f:
             for line in f:
@@ -330,14 +331,26 @@ def main():
         default="./artifacts/autocomplete-types.ts",
         help="Output path for the generated TypeScript file",
     )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help=(
+            "Verify the committed artifact matches what this script generates, "
+            "without writing. Exits 1 if it is stale."
+        ),
+    )
     args = parser.parse_args()
 
     # Find the repository root
     repo_root = Path(__file__).parent.parent
 
     # Get version
-    version = get_version()
+    version = get_version(repo_root)
     print(f"📦 SDK Version: {version}")
+
+    if version == "unknown":
+        print("❌ Could not read version from pyproject.toml")
+        return 1
 
     # Analyze SDK
     analyzer = SDKAnalyzer(repo_root)
@@ -348,8 +361,35 @@ def main():
     generator = TypeScriptGenerator(analyzer, version)
     ts_code = generator.generate()
 
-    # Write output
     output_path = Path(args.output_path)
+
+    # Verify-only: the committed artifact must already match what we just built.
+    # Guards the release path, where a stale artifact would be tagged with a
+    # version stamp that disagrees with pyproject.toml.
+    if args.check:
+        if not output_path.exists():
+            print(f"❌ Missing artifact: {output_path}")
+            return 1
+        committed = output_path.read_text(encoding="utf-8")
+        if committed != ts_code:
+            print(f"❌ Stale artifact: {output_path}")
+            print("   It does not match the current SDK. Regenerate and commit:")
+            print(
+                "   python scripts/generate-autocomplete-artifact.py "
+                f"--output-path {output_path}"
+            )
+            diff = unified_diff(
+                committed.splitlines(keepends=True),
+                ts_code.splitlines(keepends=True),
+                fromfile=f"{output_path} (committed)",
+                tofile=f"{output_path} (regenerated)",
+            )
+            sys.stdout.writelines(diff)
+            return 1
+        print(f"✅ Artifact is up to date: {output_path}")
+        return 0
+
+    # Write output
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, "w", encoding="utf-8") as f:
@@ -358,8 +398,9 @@ def main():
     print(f"✅ Generated: {output_path}")
     print(f"   Methods: {len(analyzer.methods)}")
     print(f"   Field types: {len(analyzer.field_types)}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
 

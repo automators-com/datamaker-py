@@ -45,6 +45,14 @@ jobs:
         with:
           python-version: "3.14"
 
+      # The tagged commit is what consumers pin to, and tags are immutable - a
+      # stale artifact here ships a version stamp that disagrees with the release
+      # and can never be corrected in place. Fail before anything is published.
+      - name: Verify committed autocomplete artifact matches this release
+        run: |
+          python scripts/generate-autocomplete-artifact.py \
+            --output-path ./artifacts/autocomplete-types.ts --check
+
       - name: Build release distributions
         run: |
           uv build

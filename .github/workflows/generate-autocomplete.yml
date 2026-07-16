@@ -1,44 +1,74 @@
 name: Generate Autocomplete Artifact
 
+# artifacts/autocomplete-types.ts is generated from the SDK and stamped with the
+# version in pyproject.toml. It is committed to the repo so consumers can fetch it
+# at a tagged ref, which means it must be correct *at the commit a tag points at* -
+# a fixup pushed afterwards can never reach an already-cut tag.
+#
+# So `verify` blocks any PR whose committed artifact is stale (including a version
+# bump that forgot to regenerate). `generate` stays on as a backstop for direct
+# pushes to main; once verify is enforced it should find nothing to do.
+
 on:
   push:
     branches: [main]
-  release:
-    types: [published]
+  pull_request:
+    branches: [main, dev]
   workflow_dispatch:
 
 jobs:
-  generate:
+  # Fails the PR if the committed artifact does not match the current SDK, forcing
+  # the regenerated file into the same commit rather than a follow-up push.
+  verify:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify committed artifact is up to date
+        run: |
+          python scripts/generate-autocomplete-artifact.py \
+            --output-path ./artifacts/autocomplete-types.ts --check
+
+  generate:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
-      
+
       - name: Generate autocomplete artifacts
         run: |
           python scripts/generate-autocomplete-artifact.py --output-path ./artifacts/autocomplete-types.ts
-      
+
       - name: Check for changes
         id: changes
         run: |
           git diff --exit-code artifacts/ || echo "changed=true" >> $GITHUB_OUTPUT
         continue-on-error: true
-      
+
       - name: Commit artifact to repo
         if: steps.changes.outputs.changed == 'true'
         run: |
@@ -47,4 +77,3 @@ jobs:
           git add artifacts/autocomplete-types.ts
           git commit -m "🤖 Auto-generate autocomplete types [skip ci]" || exit 0
           git push
-
