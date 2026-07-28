@@ -938,6 +938,135 @@ class DataMaker:
 
     # =================== PROPERTY ACCESS TO CLIENTS ===================
     # For advanced users who want direct access to specific clients
+
+    # =================== PLAN METHODS ===================
+    def get_plans(self):
+        """List the plans in the caller's active project.
+
+        Returns:
+            A list of plan dictionaries.
+        """
+        return self._plans.get_plans()
+
+    def get_plan(self, plan_id: str):
+        """Get a single plan by ID, including its full spec and history.
+
+        Args:
+            plan_id: The unique identifier of the plan.
+
+        Returns:
+            The plan dictionary.
+        """
+        return self._plans.get_plan(plan_id)
+
+    def update_plan(self, plan_id: str, **fields):
+        """Update a plan.
+
+        Args:
+            plan_id: The unique identifier of the plan.
+            **fields: Fields to change, e.g. title, summary, status.
+
+        Returns:
+            The updated plan dictionary.
+        """
+        return self._plans.update_plan(plan_id, **fields)
+
+    def delete_plan(self, plan_id: str):
+        """Delete a plan.
+
+        Args:
+            plan_id: The unique identifier of the plan.
+
+        Returns:
+            ``{"success": True}``. Note this differs from the other resources,
+            which answer ``{"message": ...}``.
+        """
+        return self._plans.delete_plan(plan_id)
+
+    # =================== MASKING POLICY METHODS ===================
+    def get_masking_policies(self, project_id: Optional[str] = None):
+        """Get the masking policies in the caller's project/team scope.
+
+        Args:
+            project_id: Optional project ID to scope the listing to. Falls back
+                to the DATAMAKER_PROJECT_ID env var.
+
+        Returns:
+            A list of masking policy dictionaries.
+        """
+        return self._masking_policies.get_masking_policies(project_id)
+
+    def get_masking_policy(self, policy_id: str):
+        """Get a single masking policy by ID.
+
+        Args:
+            policy_id: The unique identifier of the policy.
+
+        Returns:
+            The masking policy dictionary.
+        """
+        return self._masking_policies.get_masking_policy(policy_id)
+
+    def create_masking_policy(
+        self,
+        name: str,
+        fields,
+        description: Optional[str] = None,
+        consistent: Optional[bool] = None,
+        reversible: Optional[bool] = None,
+        key_map_name: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ):
+        """Create a masking policy.
+
+        Args:
+            name: The policy name.
+            fields: The field rule list.
+            description: Optional description.
+            consistent: Same input masks to the same output. Omit to take the
+                API's default.
+            reversible: Record the mapping so masking can be reversed. Needs
+                key_map_name to be useful.
+            key_map_name: The KeyMap a reversible policy mints mappings into.
+            project_id: Project to create it in. Falls back to
+                DATAMAKER_PROJECT_ID.
+
+        Returns:
+            The created masking policy dictionary.
+        """
+        return self._masking_policies.create_masking_policy(
+            name=name,
+            fields=fields,
+            description=description,
+            consistent=consistent,
+            reversible=reversible,
+            key_map_name=key_map_name,
+            project_id=project_id,
+        )
+
+    def update_masking_policy(self, policy_id: str, **fields):
+        """Update a masking policy.
+
+        Args:
+            policy_id: The unique identifier of the policy.
+            **fields: Fields to change. Use API spellings, e.g. keyMapName.
+
+        Returns:
+            The updated masking policy dictionary.
+        """
+        return self._masking_policies.update_masking_policy(policy_id, **fields)
+
+    def delete_masking_policy(self, policy_id: str):
+        """Delete a masking policy.
+
+        Args:
+            policy_id: The unique identifier of the policy.
+
+        Returns:
+            ``{"message": "Masking policy deleted"}``.
+        """
+        return self._masking_policies.delete_masking_policy(policy_id)
+
     @property
     def generation(self):
         """Access to generation client."""
