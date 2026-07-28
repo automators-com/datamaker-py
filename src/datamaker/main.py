@@ -22,6 +22,8 @@ from .routes.folders_and_utils import (
 from .routes.export_and_validation import ExportClient, ValidationClient
 from .routes.scenario_files import ScenarioFilesClient
 from .routes.sets import SetsClient
+from .routes.plans import PlansClient
+from .routes.masking_policies import MaskingPoliciesClient
 from .routes.keymaps import KeyMapsClient
 
 load_dotenv()
@@ -72,6 +74,10 @@ class DataMaker:
         )
         self._sets = SetsClient(api_key, default_headers, base_url, verify)
         self._keymaps = KeyMapsClient(api_key, default_headers, base_url, verify)
+        self._plans = PlansClient(api_key, default_headers, base_url, verify)
+        self._masking_policies = MaskingPoliciesClient(
+            api_key, default_headers, base_url, verify
+        )
 
         # Maintain backward compatibility
         self.api_key = self._generation.api_key
@@ -1026,3 +1032,13 @@ class DataMaker:
     def keymaps(self):
         """Access to key maps client."""
         return self._keymaps
+
+    @property
+    def plans(self):
+        """Access to plans client."""
+        return self._plans
+
+    @property
+    def masking_policies(self):
+        """Access to masking policies client."""
+        return self._masking_policies
