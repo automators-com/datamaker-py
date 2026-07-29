@@ -8,6 +8,7 @@ page.
 
 import os
 from typing import Dict, List, Optional, Any
+from ..types import DeletedResult, Set
 from .base import BaseClient
 from ..error import DataMakerError
 
@@ -54,7 +55,7 @@ class SetsClient(BaseClient):
         description: Optional[str] = None,
         row_count: Optional[int] = None,
         project_id: Optional[str] = None,
-    ) -> Dict:
+    ) -> Set:
         """Create (save) a new set.
 
         Args:
@@ -99,7 +100,7 @@ class SetsClient(BaseClient):
         description: Optional[str] = None,
         data: Optional[Any] = None,
         row_count: Optional[int] = None,
-    ) -> Dict:
+    ) -> Set:
         """Update a saved set.
 
         Only the fields that are provided are sent; the rest are left unchanged.
@@ -128,7 +129,7 @@ class SetsClient(BaseClient):
         response = self._make_request("PATCH", f"/sets/{set_id}", json=update_data)
         return response.json()
 
-    def delete_set(self, set_id: str) -> Dict:
+    def delete_set(self, set_id: str) -> DeletedResult:
         """Delete a saved set by ID.
 
         Args:
@@ -146,7 +147,7 @@ class SetsClient(BaseClient):
         data: Any,
         description: Optional[str] = None,
         project_id: Optional[str] = None,
-    ) -> Dict:
+    ) -> Set:
         """Convenience method to save rows as a named set.
 
         This is the most common entry point: hand it a name and the rows you

@@ -5,6 +5,7 @@ import base64
 import mimetypes
 import requests
 from typing import Dict, List, Optional, Union, BinaryIO
+from ..types import ScenarioFile, ScenarioFileCreated, SuccessResult, WorkspaceUploadResult
 from .base import BaseClient
 from ..error import DataMakerError
 
@@ -49,7 +50,7 @@ class ScenarioFilesClient(BaseClient):
 
     def get_scenario_file(
         self, file_id: str, scenario_id: Optional[str] = None
-    ) -> Dict:
+    ) -> ScenarioFile:
         """Get metadata for a specific file by ID.
 
         Args:
@@ -141,7 +142,7 @@ class ScenarioFilesClient(BaseClient):
         description: Optional[str] = None,
         mime_type: Optional[str] = None,
         folder_id: Optional[str] = None,
-    ) -> Dict:
+    ) -> ScenarioFileCreated:
         """Create/upload a new file in a scenario.
 
         Args:
@@ -222,7 +223,7 @@ class ScenarioFilesClient(BaseClient):
         description: Optional[str] = None,
         folder_id: Optional[str] = None,
         folder: str = "uploads",
-    ) -> Dict:
+    ) -> WorkspaceUploadResult:
         """Upload a file from a local path to a scenario using multipart upload.
 
         Args:
@@ -272,7 +273,7 @@ class ScenarioFilesClient(BaseClient):
 
     def delete_scenario_file(
         self, file_id: str, scenario_id: Optional[str] = None
-    ) -> Dict:
+    ) -> SuccessResult:
         """Delete a file by ID.
 
         Args:
@@ -400,7 +401,7 @@ class ScenarioFilesClient(BaseClient):
         description: Optional[str] = None,
         folder_id: Optional[str] = None,
         folder: str = "uploads",
-    ) -> Dict:
+    ) -> WorkspaceUploadResult:
         """Convenience method to save a local file to workspace storage.
 
         This method simplifies uploading files by automatically pulling required

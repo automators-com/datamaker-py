@@ -1,5 +1,6 @@
 from .base import BaseClient
 from typing import Dict
+from ..types import ApiKeyValidation, DatabaseExportResult
 
 
 class ExportClient(BaseClient):
@@ -10,7 +11,7 @@ class ExportClient(BaseClient):
         response = self._make_request("POST", "/export/rest", json=export_data)
         return response.json()
 
-    def export_to_database(self, export_data: Dict) -> Dict:
+    def export_to_database(self, export_data: Dict) -> DatabaseExportResult:
         """Export data to database."""
         response = self._make_request("POST", "/export/db", json=export_data)
         return response.json()
@@ -19,7 +20,7 @@ class ExportClient(BaseClient):
 class ValidationClient(BaseClient):
     """Client for validation operations."""
 
-    def validate_api_key(self) -> Dict:
+    def validate_api_key(self) -> ApiKeyValidation:
         """Test API key authentication."""
         response = self._make_request("GET", "/validate/apiKey")
         return response.json()

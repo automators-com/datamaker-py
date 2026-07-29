@@ -1,19 +1,20 @@
 from .base import BaseClient
 from ..error import DataMakerError
 from typing import Dict, List
+from ..types import DeletedResult, Template
 
 
 class TemplatesClient(BaseClient):
     """Client for template operations."""
 
-    def get_templates(self) -> List[Dict]:
+    def get_templates(self) -> List[Template]:
         """Fetch all templates from the API."""
         response = self._make_request("GET", "/templates")
         return response.json()
 
     def create_template(
         self, template_data: Dict, project_id: str, team_id: str
-    ) -> Dict:
+    ) -> Template:
         """Create a new template."""
         # Ensure required fields are present
         template_data["projectId"] = project_id
@@ -28,24 +29,24 @@ class TemplatesClient(BaseClient):
         response = self._make_request("POST", "/templates", json=template_data)
         return response.json()
 
-    def get_template(self, template_id: str) -> Dict:
+    def get_template(self, template_id: str) -> Template:
         """Get a specific template by ID."""
         response = self._make_request("GET", f"/templates/{template_id}")
         return response.json()
 
-    def update_template(self, template_id: str, template_data: Dict) -> Dict:
+    def update_template(self, template_id: str, template_data: Dict) -> Template:
         """Update a template."""
         response = self._make_request(
             "PUT", f"/templates/{template_id}", json=template_data
         )
         return response.json()
 
-    def delete_template(self, template_id: str) -> Dict:
+    def delete_template(self, template_id: str) -> DeletedResult:
         """Delete a template."""
         response = self._make_request("DELETE", f"/templates/{template_id}")
         return response.json()
 
-    def get_template_by_id(self, template_id: str) -> Dict:
+    def get_template_by_id(self, template_id: str) -> Template:
         """Get a specific template by ID (legacy method for backward compatibility)."""
         try:
             # Try direct API call first (more efficient)

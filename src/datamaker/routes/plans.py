@@ -13,6 +13,7 @@ are not described in the API's OpenAPI document at the time of writing. Use
 """
 
 from typing import Any, Dict, List
+from ..types import Plan, PlanDeleteResult
 
 from .base import BaseClient
 
@@ -20,7 +21,7 @@ from .base import BaseClient
 class PlansClient(BaseClient):
     """Client for plan operations."""
 
-    def get_plans(self) -> List[Dict[str, Any]]:
+    def get_plans(self) -> List[Plan]:
         """List the plans in the caller's active project.
 
         Returns:
@@ -29,7 +30,7 @@ class PlansClient(BaseClient):
         response = self._make_request("GET", "/plans")
         return response.json()
 
-    def get_plan(self, plan_id: str) -> Dict[str, Any]:
+    def get_plan(self, plan_id: str) -> Plan:
         """Get a single plan by ID, including its full ``spec`` and ``history``.
 
         Args:
@@ -41,7 +42,7 @@ class PlansClient(BaseClient):
         response = self._make_request("GET", f"/plans/{plan_id}")
         return response.json()
 
-    def update_plan(self, plan_id: str, **fields: Any) -> Dict[str, Any]:
+    def update_plan(self, plan_id: str, **fields: Any) -> Plan:
         """Update a plan.
 
         Args:
@@ -54,7 +55,7 @@ class PlansClient(BaseClient):
         response = self._make_request("PATCH", f"/plans/{plan_id}", json=fields)
         return response.json()
 
-    def delete_plan(self, plan_id: str) -> Dict[str, Any]:
+    def delete_plan(self, plan_id: str) -> PlanDeleteResult:
         """Delete a plan.
 
         Note:
