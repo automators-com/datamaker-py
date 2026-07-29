@@ -15,6 +15,7 @@ applies. Two flags decide how it behaves, and they are easy to confuse:
 
 import os
 from typing import Any, Dict, List, Optional
+from ..types import DeletedResult, MaskingPolicy
 
 from .base import BaseClient
 
@@ -43,7 +44,7 @@ class MaskingPoliciesClient(BaseClient):
         response = self._make_request("GET", endpoint)
         return response.json()
 
-    def get_masking_policy(self, policy_id: str) -> Dict[str, Any]:
+    def get_masking_policy(self, policy_id: str) -> MaskingPolicy:
         """Get a single masking policy by ID.
 
         Args:
@@ -64,7 +65,7 @@ class MaskingPoliciesClient(BaseClient):
         reversible: Optional[bool] = None,
         key_map_name: Optional[str] = None,
         project_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> MaskingPolicy:
         """Create a masking policy.
 
         Args:
@@ -101,7 +102,7 @@ class MaskingPoliciesClient(BaseClient):
         response = self._make_request("POST", "/masking-policies", json=payload)
         return response.json()
 
-    def update_masking_policy(self, policy_id: str, **fields: Any) -> Dict[str, Any]:
+    def update_masking_policy(self, policy_id: str, **fields: Any) -> MaskingPolicy:
         """Update a masking policy.
 
         Args:
@@ -117,7 +118,7 @@ class MaskingPoliciesClient(BaseClient):
         )
         return response.json()
 
-    def delete_masking_policy(self, policy_id: str) -> Dict[str, Any]:
+    def delete_masking_policy(self, policy_id: str) -> DeletedResult:
         """Delete a masking policy.
 
         Args:

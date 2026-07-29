@@ -10,6 +10,7 @@ and the last write wins for the new key.
 
 import os
 from typing import Dict, List, Optional
+from ..types import KeyMapLookupResult, KeyMapUpsertResult
 from .base import BaseClient
 from ..error import DataMakerError
 
@@ -44,7 +45,7 @@ class KeyMapsClient(BaseClient):
         entries: Dict[str, str],
         run_id: Optional[str] = None,
         project_id: Optional[str] = None,
-    ) -> Dict:
+    ) -> KeyMapUpsertResult:
         """Record old-to-new key mappings in a named key map (batch upsert).
 
         Use after creating records in a target system to remember which source
@@ -106,7 +107,7 @@ class KeyMapsClient(BaseClient):
         object: str,
         old_keys: List[str],
         project_id: Optional[str] = None,
-    ) -> Dict:
+    ) -> KeyMapLookupResult:
         """Translate source-system keys to target-system keys (batch lookup).
 
         Use when generating or migrating data that references records migrated

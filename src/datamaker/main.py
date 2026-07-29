@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
-from typing import Optional, Dict, List
+from typing import Any, Optional, Dict, List
+from .types import WorkspaceUploadResult
 from .routes.base import BaseClient
 from .routes.generation import GenerationClient
 from .routes.templates import TemplatesClient
@@ -95,11 +96,13 @@ class DataMaker:
         # Get the template
         template = self._templates.get_template_by_id(template_id)
 
-        # Set the quantity
-        template["quantity"] = quantity
+        # Copy rather than mutate: `quantity` is a generation parameter the
+        # request carries, not a field of the stored Template, and writing it
+        # onto the fetched row would put a key there that the API never sends.
+        payload: Dict[str, Any] = {**template, "quantity": quantity}
 
         # Generate data using the template
-        return self.generate(template)
+        return self.generate(payload)
 
     # =================== TEMPLATE METHODS ===================
     def get_templates(self):
@@ -629,7 +632,7 @@ class DataMaker:
         description: Optional[str] = None,
         folder_id: Optional[str] = None,
         folder: str = "uploads",
-    ) -> Dict:
+    ) -> WorkspaceUploadResult:
         """Convenience method to save a local file to workspace storage.
 
         This method simplifies uploading files by automatically pulling required

@@ -66,3 +66,38 @@ See [`artifacts/README.md`](artifacts/README.md) for more details.
 ## Development & Contibutions
 
 See the [contributing.md](/CONTRIBUTING.md) guide for details on how to contribute to this project.
+
+## Types
+
+Response types are **generated** from the API's OpenAPI document, not hand-written:
+
+```
+spec/openapi.json  ->  src/datamaker/generated/schema.py  ->  src/datamaker/types.py
+```
+
+Import from `datamaker.types`, which resolves each spec schema name to the class
+that really matches it:
+
+```python
+from datamaker.types import Project, Plan, Template
+
+projects: list[Project] = dm.get_projects()
+```
+
+They are `TypedDict`s, so nothing changes at runtime — methods still return the
+plain dicts `response.json()` produces, and `project["name"]` works exactly as
+before. The types are checker-only.
+
+To regenerate after the API changes:
+
+```bash
+python scripts/generate_schema.py
+```
+
+CI runs `python scripts/generate_schema.py --check` and fails if the committed
+types drift from the spec.
+
+Three schemas cannot currently be generated (`SetDetail`, `PackInstallListItem`,
+`SchemaGraphNavigation`): they are composed with `allOf`, which the generator
+merges away rather than emitting as a named class. Methods returning those keep
+`Dict`. The generator script lists them explicitly and fails if the set grows.

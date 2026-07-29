@@ -32,6 +32,18 @@ jobs:
         run: |
           uv sync --all-extras --dev
 
+      # The types in src/datamaker/generated (and the verified aliases in
+      # src/datamaker/types.py) are produced from spec/openapi.json. Stale or
+      # hand-edited types mean the SDK describes an API that has moved on -
+      # the same drift this package's `-> Dict` signatures used to hide.
+      - name: Generated types match the spec
+        run: |
+          python scripts/generate_schema.py --check
+
+      - name: Run tests
+        run: |
+          uv run --with pytest pytest -m "not integration"
+
       - name: Build package
         run: |
           uv build

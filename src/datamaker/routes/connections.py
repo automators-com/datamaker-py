@@ -1,5 +1,6 @@
 from .base import BaseClient
-from typing import Optional, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
+from ..types import ConnectionTable
 
 
 class ConnectionsClient(BaseClient):
@@ -24,7 +25,7 @@ class ConnectionsClient(BaseClient):
         endpoint_folder_id: Optional[str] = None,
     ) -> Dict:
         """Create a new database connection."""
-        data = {
+        data: Dict[str, Any] = {
             "name": name,
             "type": connection_type,
             "connectionString": connection_string,
@@ -55,7 +56,7 @@ class ConnectionsClient(BaseClient):
         endpoint_folder_id: Optional[str] = None,
     ) -> Dict:
         """Update a database connection."""
-        data = {
+        data: Dict[str, Any] = {
             "name": name,
             "type": connection_type,
             "connectionString": connection_string,
@@ -81,7 +82,7 @@ class ConnectionsClient(BaseClient):
         response = self._make_request("POST", "/connections/test", json=connection_data)
         return response.json()
 
-    def get_tables(self) -> List[Dict]:
+    def get_tables(self) -> List[ConnectionTable]:
         """Get all tables from connections."""
         response = self._make_request("GET", "/connections/tables")
         return response.json()
