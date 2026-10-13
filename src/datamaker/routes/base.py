@@ -1,7 +1,7 @@
 import os
 import requests
 from typing import Optional, Dict
-from ..error import DataMakerError
+from ..error import DataMakerAPIError
 
 
 class BaseClient:
@@ -35,6 +35,14 @@ class BaseClient:
         response = requests.request(method, url, headers=self.headers, **kwargs)
 
         if response.status_code not in [200, 201]:
-            raise DataMakerError(f"API request failed: {response.text}")
+            try:
+                body = response.json()
+            except ValueError:
+                body = None
+            raise DataMakerAPIError(
+                f"API request failed: {response.text}",
+                status_code=response.status_code,
+                body=body,
+            )
 
         return response

@@ -87,6 +87,14 @@ class SDKAnalyzer:
                 "optional": i >= len(args) - len(node.args.defaults) if node.args.defaults else False
             })
 
+        # Keyword-only parameters (after a bare `*`) live in a separate list.
+        for arg, default in zip(node.args.kwonlyargs, node.args.kw_defaults):
+            params.append({
+                "name": arg.arg,
+                "type": ast.unparse(arg.annotation) if arg.annotation else "any",
+                "optional": default is not None
+            })
+
         return_type = "any"
         if node.returns:
             return_type = ast.unparse(node.returns) if hasattr(ast, "unparse") else str(node.returns)

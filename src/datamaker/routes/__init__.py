@@ -14,6 +14,7 @@ from .export_and_validation import ExportClient, ValidationClient
 from .scenario_files import ScenarioFilesClient
 from .sets import SetsClient
 from .keymaps import KeyMapsClient
+from .tosca import ToscaClient
 
 __all__ = [
     "BaseClient",
@@ -36,4 +37,5 @@ __all__ = [
     "ScenarioFilesClient",
     "SetsClient",
     "KeyMapsClient",
+    "ToscaClient",
 ]
