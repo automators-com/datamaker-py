@@ -167,6 +167,19 @@ class TestPushToscaDataset:
         assert result.outcome == "copied"
 
 
+def test_hand_built_result_has_an_empty_raw():
+    result = ToscaDatasetPushResult(
+        dataset_id="TDS-1",
+        name="Orders",
+        space="default",
+        rows_count=0,
+        outcome="created",
+        example="",
+    )
+    assert result.raw == {}
+    assert result.raw.get("datasetId") is None
+
+
 class TestPushToscaDatasetValidation:
     """Bad arguments are refused before any request is made."""
 

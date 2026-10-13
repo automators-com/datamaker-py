@@ -6,8 +6,26 @@ from __future__ import annotations
 from typing import Any, Literal, NotRequired, TypeAlias, TypedDict
 
 
+class AdHocRunToken(TypedDict):
+    expiresIn: float
+    jobId: str
+    token: str
+
+
 class AddressAvailability(TypedDict):
     available: bool
+
+
+class File(TypedDict):
+    downloadUrl: str
+    filename: str
+    key: str
+    size: int
+
+
+class AdhocRunFileUploadResult(TypedDict):
+    file: File
+    success: Literal[True]
 
 
 class ApiError(TypedDict):
@@ -103,6 +121,7 @@ class Chat(TypedDict):
     messages: NotRequired[Any]
     projectId: str | None
     title: str
+    titleSource: str
     updatedAt: str
 
 
@@ -119,12 +138,47 @@ class ChatAsset(TypedDict):
     updatedAt: str
 
 
+class ChatTitleResult(TypedDict):
+    generated: bool
+    source: Literal['placeholder', 'auto', 'refined', 'user']
+    title: str
+
+
 class ClassifiedField(TypedDict):
     name: NotRequired[str]
     sensitive: NotRequired[bool]
 
 
 ClassifiedFields: TypeAlias = list[ClassifiedField]
+
+
+class CloudLicense(TypedDict):
+    activatedAt: str | None
+    aiCreditsPerMonth: int
+    coreSystems: int
+    createdAt: str
+    expiresAt: str | None
+    keyMasked: str
+    maxTeams: int
+    plan: Literal['team', 'enterprise', 'trial']
+    revokedAt: str | None
+    seats: int
+    status: Literal['active', 'revoked']
+    teamId: str | None
+
+
+class CloudLicenseStatus(TypedDict):
+    contact: str
+    daysRemaining: int | None
+    expiry: Literal['active', 'expiring', 'grace'] | None
+    license: CloudLicense | None
+    licensed: bool
+    message: str | None
+    posture: Literal['active', 'lapsed', 'unlicensed']
+    required: bool
+    seatsUsed: int | None
+    teamId: str | None
+    teamName: str | None
 
 
 class Column(TypedDict):
@@ -149,10 +203,20 @@ class ConnectionTable(TypedDict):
     table_name: str
 
 
+class ConnectionTypeOption(TypedDict):
+    label: str
+    placeholder: str
+    relational: bool
+    statements: Literal['sql', 'mql']
+    value: str
+
+
 class ConnectionVerdict(TypedDict):
     message: str
     ok: bool
+    origin: NotRequired[str]
     status: NotRequired[int]
+    suggestedOrigin: NotRequired[str]
 
 
 class CsrfToken(TypedDict):
@@ -167,7 +231,7 @@ class CsvBatchUploadError(TypedDict):
     ok: Literal[False]
 
 
-class File(TypedDict):
+class File1(TypedDict):
     deduped: bool
     key: str
     name: str
@@ -175,7 +239,7 @@ class File(TypedDict):
 
 
 class CsvBatchUploadResult(TypedDict):
-    files: list[File]
+    files: list[File1]
     folderName: str | None
     folderPrefix: str
     ok: Literal[True]
@@ -198,6 +262,46 @@ class CustomDataType(TypedDict):
     teamId: str
 
 
+class CustomDiscoveryResult(TypedDict):
+    distribution: dict[str, float]
+    field: str
+    observed: int
+    rowsSampled: int
+    values: dict[str, float]
+
+
+class Source(TypedDict):
+    fields: list[str]
+    label: str
+    name: str
+
+
+class CustomDiscoverySources(TypedDict):
+    sources: list[Source]
+
+
+class DataJob(TypedDict):
+    chunksProcessed: int
+    config: NotRequired[Any]
+    createdAt: str
+    createdBy: str | None
+    error: str | None
+    errorDatasetId: str | None
+    finishedAt: str | None
+    id: str
+    inputDatasetId: str | None
+    outputDatasetId: str | None
+    projectId: str
+    rowsFailed: int
+    rowsProcessed: int
+    rowsSkipped: int
+    startedAt: str | None
+    status: Literal['pending', 'running', 'completed', 'failed', 'cancelled']
+    teamId: str
+    type: Literal['extraction', 'transform', 'mask', 'load']
+    updatedAt: str
+
+
 class Field(TypedDict):
     columnID: int
     dataTypeID: int
@@ -209,11 +313,20 @@ class Field(TypedDict):
 
 
 class DatabaseExportResult(TypedDict):
-    command: str
-    fields: list[Field]
-    oid: int | None
+    command: NotRequired[str]
+    fields: NotRequired[list[Field]]
+    oid: NotRequired[int | None]
     rowCount: int | None
     rows: list[Any]
+
+
+class Analysis(TypedDict):
+    dependency_tables: list[str]
+    include_dependencies: bool
+    mode: Literal['relational', 'direct-sql']
+    related_tables: list[str]
+    requested_table: str | None
+    selected_tables: list[str]
 
 
 class Template(TypedDict):
@@ -228,21 +341,148 @@ class Template(TypedDict):
 
 class DatabaseTemplatesProposal(TypedDict):
     ai_prompts: list[dict[str, Any]]
+    analysis: Analysis
     data_generation_order: list[str] | None
     templates: list[Template]
+
+
+class Connection(TypedDict):
+    connectionString: str
+    id: NotRequired[str]
+    type: Literal['db2', 'postgresql', 'mysql', 'mssql', 'mongodb', 'oracle']
+
+
+class User(TypedDict):
+    projectId: NotRequired[str]
+    teamId: NotRequired[str]
+    teamMemberId: NotRequired[str]
+
+
+class DatabaseTemplatesRequest(TypedDict):
+    connection: NotRequired[Connection]
+    connectionId: NotRequired[str]
+    includeDependencies: NotRequired[bool]
+    mode: NotRequired[Literal['relational', 'direct-sql']]
+    synthetic: NotRequired[bool]
+    tableName: NotRequired[str]
+    user: NotRequired[User]
 
 
 class DatamakerConfig(TypedDict):
     aiGatewayUrl: str
     allowedModels: list[str]
     apiContractVersion: str
+    authUrl: str
+    builtAt: str
+    capabilities: list[str]
     defaultModel: str
+    gitSha: str
+    minDesktopVersion: str
+    minWebVersion: str
     opencodeUrl: str
     quantityLimit: int
+    recommendedDesktopVersion: str
+    recommendedWebVersion: str
+    version: str
+
+
+class Dataset(TypedDict):
+    byteSize: int
+    chunkCount: int
+    contentHash: str | None
+    createdAt: str
+    createdBy: str | None
+    description: str | None
+    fieldSchema: NotRequired[Any]
+    id: str
+    name: str
+    parentDatasetId: str | None
+    producedByRunId: str | None
+    projectId: str
+    rowCount: int
+    status: Literal['building', 'ready', 'failed']
+    storagePrefix: str
+    teamId: str
+    updatedAt: str
+
+
+class DatasetChunkAppendResult(TypedDict):
+    bytes: int
+    chunkIndex: int
+    dataset: Dataset
+    key: str
+    rows: int
+    sha256: str
+
+
+class DatasetChunkInfo(TypedDict):
+    chunkIndex: int
+    key: str
+
+
+class DatasetColumnProfile(TypedDict):
+    distinctCount: int
+    distinctIsExact: bool
+    max: float | None
+    maxString: str | None
+    min: float | None
+    minString: str | None
+    name: str
+    nullCount: int
+    numericCount: int
+    presentCount: int
+    sum: float | None
+    types: dict[str, int]
+
+
+class DatasetDetail(Dataset):
+    createdByName: str | None
+
+
+class DatasetPreview(TypedDict):
+    rowCount: int
+    rows: list[Any]
+
+
+class DatasetSample(TypedDict):
+    chunksVisited: int
+    rowCount: int
+    rows: list[Any]
+
+
+class DatasetStats(TypedDict):
+    columns: list[DatasetColumnProfile]
+    nonObjectRows: int
+    rowCount: int
+    rowsProfiled: int
+    truncated: bool
 
 
 class DeletedResult(TypedDict):
     message: str
+
+
+class DemoConfig(TypedDict):
+    fieldLimit: int
+    quantityLimit: int
+
+
+class DemoFieldType(TypedDict):
+    meta: dict[str, Any]
+    options: dict[str, Any]
+    type: str
+
+
+class DemoGeneratedData(TypedDict):
+    live_data: list[dict[str, Any]]
+
+
+class DerivedExpectations(TypedDict):
+    countMatchesMetadata: bool
+    expectedCount: int
+    expectedSumCents: NotRequired[int]
+    nonNumericRows: NotRequired[int]
+    sumField: NotRequired[str]
 
 
 class EffectivePermissions(TypedDict):
@@ -289,12 +529,28 @@ class FieldType(TypedDict):
     type: str
 
 
+class FileTemplate(TypedDict):
+    columns: NotRequired[Any]
+    delimiter: str
+    description: NotRequired[str | None]
+    format: Literal['delimited', 'fixed-width']
+    id: str
+    includeHeader: bool
+    lineEnding: Literal['lf', 'crlf']
+    name: str
+    projectId: str
+    teamId: str
+    version: int
+
+
 class GeneratedData(TypedDict):
     dependencies: dict[str, Any]
     live_data: dict[str, Any]
 
 
 class GeneratedTemplateField(TypedDict):
+    _inference: NotRequired[Literal['fallback']]
+    _inferenceReason: NotRequired[str]
     active: NotRequired[bool]
     function: NotRequired[str]
     name: str
@@ -313,6 +569,108 @@ class ImageAnalysisResult(TypedDict):
     success: Literal[True]
 
 
+class Check(TypedDict):
+    kind: Literal['number']
+    max: float | None
+    min: float | None
+
+
+class Check1(TypedDict):
+    format: str
+    kind: Literal['date']
+
+
+class Lookup(TypedDict):
+    displayField: str | None
+    kind: Literal['api', 'db']
+
+
+class InputSetColumn(TypedDict):
+    check: Check | Check1 | None
+    label: str
+    lookup: Lookup | None
+    name: str
+    type: str
+
+
+class InputSetLookupResult(TypedDict):
+    display: NotRequired[str | None]
+    message: NotRequired[str]
+    status: Literal['found', 'missing', 'unchecked']
+
+
+class InputSetPull(TypedDict):
+    at: str
+    ok: bool
+    principal: str | None
+    rows: int
+    testCase: str | None
+    version: int | None
+
+
+class TestCase(TypedDict):
+    externalId: str | None
+    id: str
+    lastPull: InputSetPull | None
+    name: str
+
+
+class InputSetPullStatus(TypedDict):
+    inputSetId: str
+    lastPull: InputSetPull | None
+    pullCount: int
+    testCases: list[TestCase]
+    truncated: bool
+
+
+class InputSetRow(TypedDict):
+    id: str
+    testCaseId: str | None
+    values: dict[str, str]
+
+
+class EmptyItem(TypedDict):
+    name: str
+    rows: int
+
+
+class InputSetScenarioFit(TypedDict):
+    dropped: list[str]
+    dynamic: bool
+    empty: list[EmptyItem]
+    ignoresRow: bool
+    missing: list[str]
+    unused: list[str]
+
+
+class InputSetSummary(TypedDict):
+    createdAt: str
+    id: str
+    name: str
+    rowCount: int
+    templateId: str
+    templateName: str
+    testCaseCount: int
+    updatedAt: str
+
+
+class InputSetTestCase(TypedDict):
+    externalId: str | None
+    id: str
+    name: str
+    source: Literal['manual', 'tosca-cloud', 'tosca-onprem']
+
+
+class InputSetVersionSummary(TypedDict):
+    createdAt: str
+    createdBy: str | None
+    datasetId: str | None
+    id: str
+    number: int
+    rowCount: int
+    testCaseCount: int
+
+
 class Integration(TypedDict):
     auth: NotRequired[None]
     createdAt: str
@@ -326,6 +684,19 @@ class Integration(TypedDict):
     projectId: str | None
     scope: str | None
     teamId: str | None
+
+
+class Invitation(TypedDict):
+    createdAt: str
+    email: str
+    expiresAt: str
+    id: str
+    role: str
+    status: Literal['pending', 'accepted', 'revoked', 'expired']
+
+
+class InvitationList(TypedDict):
+    invitations: list[Invitation]
 
 
 class KeyMapDeleteResult(TypedDict):
@@ -342,6 +713,13 @@ class KeyMapEntry(TypedDict):
 
 
 class KeyMapLookupResult(TypedDict):
+    mapName: str
+    mappings: dict[str, str]
+    missing: list[str]
+    object: str
+
+
+class KeyMapReverseResult(TypedDict):
     mapName: str
     mappings: dict[str, str]
     missing: list[str]
@@ -371,6 +749,7 @@ class License(TypedDict):
     keyMasked: str
     offline: bool
     revokedAt: str | None
+    scope: Literal['deployment', 'team']
     seats: int | None
     status: str
     supersededById: str | None
@@ -378,15 +757,51 @@ class License(TypedDict):
     type: str
 
 
+class LicenseRequestState(TypedDict):
+    company: str
+    contactEmail: str
+    createdAt: str
+    denyNote: str | None
+    id: str
+    issuerRequestId: str
+    lastPolledAt: str | None
+    licenseId: str | None
+    message: str | None
+    requestedSeats: int | None
+    resolvedAt: str | None
+    status: str
+
+
+class License1(TypedDict):
+    customer: str | None
+    devTrusted: bool
+    expiresAt: str
+    features: list[str]
+    issuedAt: str
+    issuer: str
+    offline: bool
+    seats: int
+    source: Literal['env', 'captured']
+    status: Literal['valid', 'invalid', 'expired', 'revoked', 'superseded']
+    type: Literal['server', 'desktop']
+
+
+class SeatUsage(TypedDict):
+    seats: int
+    used: int
+
+
 class LicenseStatus(TypedDict):
     code: str | None
     graceDays: int | None
     graceEndsAt: str | None
     issuer: str | None
+    license: License1 | None
     message: str | None
     mode: str
     readOnlyReason: str | None
     required: bool
+    seatUsage: SeatUsage | None
 
 
 class LogCleanupResult(TypedDict):
@@ -397,6 +812,26 @@ class LogCleanupResult(TypedDict):
 
 class LogoutResult(TypedDict):
     ok: Literal[True]
+
+
+class Field1(TypedDict):
+    errorCount: int
+    expr: str | None
+    parseError: str | None
+    status: str
+    targetField: str
+
+
+class Row1(TypedDict):
+    fieldErrors: dict[str, str]
+    source: dict[str, Any]
+    target: dict[str, Any]
+
+
+class MappingDryRunResult(TypedDict):
+    fields: list[Field1]
+    rows: list[Row1]
+    sampleSize: int
 
 
 class MaskingPolicy(TypedDict):
@@ -414,11 +849,67 @@ class MaskingPolicy(TypedDict):
     updatedAt: str
 
 
+class Warning(TypedDict):
+    count: int
+    detail: str
+    field: str
+    kind: str
+
+
+class MaskingRunReport(TypedDict):
+    byField: dict[str, dict[str, int]]
+    collisionRetries: int
+    distinctByClass: dict[str, int]
+    finishedAt: str | None
+    keyFingerprint: str
+    policyDigest: str
+    policyId: str
+    recordsProcessed: int
+    startedAt: str
+    valuesMasked: int
+    warnings: list[Warning]
+
+
+class Invitation1(TypedDict):
+    email: str
+    expiresAt: str
+    id: str
+    role: str
+    status: Literal['pending', 'accepted', 'revoked', 'expired']
+
+
+class MemberInviteResult2(TypedDict):
+    alreadyInvited: bool
+    emailAccepted: bool
+    emailFailureReason: Literal['not-configured', 'misconfigured', 'send-failed'] | None
+    emailMessageId: str | None
+    emailSent: bool
+    invitation: Invitation1
+    invited: Literal[True]
+    success: Literal[True]
+
+
 class MemberRoleAssignment(TypedDict):
     createdAt: str
     id: str
     roleId: str
     teamMemberId: str
+
+
+class MyChatAsset(TypedDict):
+    chatId: str
+    chatTitle: str | None
+    createdAt: str
+    filename: str
+    id: str
+    mimeType: str | None
+    presignedUrl: str | None
+    size: int | None
+
+
+class MyChatAssetList(TypedDict):
+    files: list[MyChatAsset]
+    truncated: bool
 
 
 class PackCatalog(TypedDict):
@@ -452,6 +943,7 @@ class Capability(TypedDict):
     key: str
     name: str
     note: str
+    scenarioIds: NotRequired[list[str]]
     setId: NotRequired[str]
     source: Literal['derived', 'manual']
     sumField: NotRequired[str]
@@ -492,6 +984,7 @@ class Scaffold(TypedDict):
 Step = TypedDict(
     'Step',
     {
+        'endpointId': NotRequired[str],
         'fields': NotRequired[list[str]],
         'from': str,
         'iface': str,
@@ -545,6 +1038,7 @@ class MappingConfig(TypedDict):
 
 
 class Mapping(TypedDict):
+    expr: NotRequired[str]
     generate: bool
     keyMapName: NotRequired[str]
     maskingPolicyId: NotRequired[str]
@@ -555,9 +1049,23 @@ class Mapping(TypedDict):
     transform: str
 
 
+class Phase(TypedDict):
+    entities: list[str]
+    note: NotRequired[str]
+    phase: str
+    writes: list[str]
+
+
+class Done(TypedDict):
+    at: str
+    by: str
+    evidence: str
+
+
 class Task1(TypedDict):
     deps: list[str]
     detail: str
+    done: NotRequired[Done | None]
     key: NotRequired[str]
     priority: NotRequired[Literal['P0', 'P1', 'P2', 'P3']]
     title: str
@@ -567,6 +1075,7 @@ class Task(TypedDict):
     note: NotRequired[str]
     phase: str
     tasks: list[Task1]
+    writes: list[str]
 
 
 class Version(TypedDict):
@@ -591,6 +1100,7 @@ class Spec(TypedDict):
     lifecycle: NotRequired[Lifecycle]
     mappingConfig: NotRequired[MappingConfig]
     mappings: NotRequired[list[Mapping]]
+    phases: NotRequired[list[Phase]]
     steps: list[str]
     tasks: NotRequired[list[Task]]
     version: NotRequired[Version]
@@ -602,7 +1112,7 @@ class Plan(TypedDict):
     title: str
 
 
-class File1(TypedDict):
+class File2(TypedDict):
     content: str
     name: str
 
@@ -615,7 +1125,7 @@ class Param(TypedDict):
 
 class Scenario(TypedDict):
     description: NotRequired[str]
-    files: list[File1]
+    files: list[File2]
     name: str
     params: list[Param]
 
@@ -634,12 +1144,24 @@ class Template1(TypedDict):
     simulationConfig: NotRequired[Any]
 
 
+class Value(TypedDict):
+    value: str
+    weight: int
+
+
+class ValueLibrary(TypedDict):
+    description: NotRequired[str]
+    name: str
+    values: list[Value]
+
+
 class Assets(TypedDict):
     datatypes: list[Datatype]
     plans: list[Plan]
     scenarios: list[Scenario]
     skills: list[Skill]
     templates: list[Template1]
+    valueLibraries: list[ValueLibrary]
 
 
 class Require(TypedDict):
@@ -732,6 +1254,14 @@ class PackInstallResult(TypedDict):
     install: NotRequired[PackInstall]
 
 
+class PaginationProbeResult(TypedDict):
+    confidence: Literal['high', 'medium', 'low']
+    evidence: list[str]
+    probeRowCount: int
+    sampleRows: list[Any]
+    strategy: NotRequired[Any]
+
+
 class PdfAnalysisResult(TypedDict):
     documentInfo: dict[str, Any]
     downloadUrl: str
@@ -755,6 +1285,7 @@ class HistoryItem(TypedDict):
 Step1 = TypedDict(
     'Step1',
     {
+        'endpointId': NotRequired[str],
         'fields': NotRequired[list[str]],
         'from': str,
         'iface': str,
@@ -787,6 +1318,7 @@ class Gap1(TypedDict):
 class Task3(TypedDict):
     deps: list[str]
     detail: str
+    done: NotRequired[Done | None]
     key: NotRequired[str]
     priority: NotRequired[Literal['P0', 'P1', 'P2', 'P3']]
     title: str
@@ -796,6 +1328,7 @@ class Task2(TypedDict):
     note: NotRequired[str]
     phase: str
     tasks: list[Task3]
+    writes: list[str]
 
 
 class Spec1(TypedDict):
@@ -814,6 +1347,7 @@ class Spec1(TypedDict):
     lifecycle: NotRequired[Lifecycle]
     mappingConfig: NotRequired[MappingConfig]
     mappings: NotRequired[list[Mapping]]
+    phases: NotRequired[list[Phase]]
     steps: list[str]
     tasks: NotRequired[list[Task2]]
     version: NotRequired[Version]
@@ -844,6 +1378,48 @@ class PlanDeleteResult(TypedDict):
     success: bool
 
 
+class Counts(TypedDict):
+    all: NotRequired[int]
+    approved: NotRequired[int]
+    completed: NotRequired[int]
+    draft: NotRequired[int]
+    failed: NotRequired[int]
+    mapping: NotRequired[int]
+    running: NotRequired[int]
+
+
+class PlanPage(TypedDict):
+    counts: Counts
+    page: int
+    pageSize: int
+    plans: list[Plan1]
+    total: int
+
+
+class Delivery(TypedDict):
+    at: str
+    attempted: bool
+    endpointId: str
+    entity: str
+    error: str | None
+    rows: int | None
+    status: int | None
+    succeeded: bool
+
+
+class Entity2(TypedDict):
+    entity: str
+    produced: int | None
+    requested: int
+
+
+class Production(TypedDict):
+    deliveries: list[Delivery]
+    entities: list[Entity2]
+    kind: Literal['generate']
+    shortfall: int | None
+
+
 class Config(TypedDict):
     freshnessDays: int
     mode: Literal['release', 'migration']
@@ -861,7 +1437,36 @@ class Gap2(TypedDict):
     type: Literal['connect', 'custom', 'input', 'blocker', 'gap', 'stale']
 
 
-class Check(TypedDict):
+class Scenario1(TypedDict):
+    id: str
+    name: str
+
+
+class Set(TypedDict):
+    id: str
+    name: str
+
+
+class Suggested(TypedDict):
+    scenarios: list[Scenario1]
+    set: NotRequired[Set]
+
+
+class Template2(TypedDict):
+    id: str
+    name: str
+
+
+class Binding(TypedDict):
+    danglingScenarioIds: list[str]
+    danglingSetId: NotRequired[str]
+    scenarios: list[Scenario1]
+    set: NotRequired[Set]
+    suggested: NotRequired[Suggested]
+    template: NotRequired[Template2]
+
+
+class Check2(TypedDict):
     detail: str
     id: str
     label: str
@@ -869,11 +1474,14 @@ class Check(TypedDict):
 
 
 class Item(TypedDict):
-    checks: list[Check]
+    binding: NotRequired[Binding]
+    checks: list[Check2]
     group: NotRequired[str]
     key: str
     name: str
-    status: Literal['ready', 'partial', 'missing', 'reconciled', 'discrepancy']
+    status: Literal[
+        'ready', 'partial', 'missing', 'unbound', 'reconciled', 'discrepancy'
+    ]
 
 
 class Summary(TypedDict):
@@ -882,6 +1490,7 @@ class Summary(TypedDict):
     passing: int
     scorePct: int
     total: int
+    unbound: int
 
 
 class Results(TypedDict):
@@ -895,11 +1504,17 @@ class Results(TypedDict):
 
 class PlanRunAccepted(TypedDict):
     runId: str
-    status: Literal['running']
+    status: Literal['queued']
 
 
 class PlanRunAck(TypedDict):
     ok: Literal[True]
+
+
+class PlanRunCancelled(TypedDict):
+    agentStopped: bool
+    ok: Literal[True]
+    status: Literal['failed']
 
 
 class PlanRunFile(TypedDict):
@@ -908,33 +1523,51 @@ class PlanRunFile(TypedDict):
     id: str
     mimeType: str | None
     presignedUrl: str | None
+    rows: int | None
     size: int
 
 
-class File2(TypedDict):
+class File3(TypedDict):
     entity: str
     filename: str
     id: str
     key: str
     mimeType: str | None
+    rows: int | None
     size: int
 
 
 class PlanRunFileAck(TypedDict):
-    file: File2
+    file: File3
     ok: Literal[True]
+
+
+class PlanRunWriteCheck(TypedDict):
+    decision: Literal['allow', 'deny']
+    reason: NotRequired[str]
+    specVersion: int | None
 
 
 class PlanSignoff(TypedDict):
     createdAt: str
+    hashAlg: str | None
     id: str
     note: str | None
-    planId: str
-    planRunId: str
+    planId: str | None
+    planRunId: str | None
     report: NotRequired[Any]
     reportHash: str
     signedBy: str
     verdict: str
+
+
+class PlanSignoffVerification(TypedDict):
+    computedHash: str | None
+    detail: str
+    hashAlg: str | None
+    reportHash: str
+    signoffId: str
+    status: Literal['verified', 'mismatch', 'unverifiable']
 
 
 class PreferencesUpdateError(TypedDict):
@@ -986,6 +1619,37 @@ class PythonExecutionResult(TypedDict):
     success: Literal[True]
 
 
+class File4(TypedDict):
+    filename: str
+    presignedUrl: str | None
+
+
+class ReconciliationReportRef(TypedDict):
+    files: list[File4]
+    runId: str
+    scorePct: int
+    verdict: str
+
+
+class Request(TypedDict):
+    body: NotRequired[None]
+    headers: dict[str, str]
+    method: str
+    url: str
+
+
+class Response(TypedDict):
+    body: NotRequired[Any]
+    headers: dict[str, str]
+    status: int
+    statusText: str
+
+
+class RestExportResult(TypedDict):
+    request: Request
+    response: Response
+
+
 class Role(TypedDict):
     baseRole: str | None
     createdAt: str
@@ -995,6 +1659,15 @@ class Role(TypedDict):
     name: str
     teamId: str
     updatedAt: str
+
+
+class SampleVerifyResult(TypedDict):
+    fetchFailed: int
+    matched: int
+    mismatched: int
+    rows: list[Any]
+    sampled: int
+    unmapped: int
 
 
 class Service(TypedDict):
@@ -1017,7 +1690,9 @@ class SapServiceCatalog(TypedDict):
     truncated: NotRequired[bool]
 
 
-class Scenario1(TypedDict):
+class Scenario3(TypedDict):
+    businessDescription: str | None
+    businessLabel: str | None
     createdAt: str
     createdBy: str | None
     description: str | None
@@ -1033,6 +1708,7 @@ class Scenario1(TypedDict):
     presignedUrl: str | None
     projectId: str
     requirementsUrl: str | None
+    sharedWithBusinessUsers: bool
     storageUsed: int
     teamId: str
     timeoutSeconds: int
@@ -1054,6 +1730,51 @@ class ScenarioEnvironmentVariableList(TypedDict):
 
 class ScenarioEnvironmentVariables(TypedDict):
     environmentVariables: dict[str, str]
+
+
+class Payload(TypedDict):
+    environmentVariables: NotRequired[dict[str, str]]
+    jobId: str
+    projectId: str
+    requirementsUrl: str | None
+    scenarioApiKey: str
+    scenarioId: str
+    scenarioLogId: str | None
+    scriptUrl: str
+    teamId: str
+    timeoutSeconds: NotRequired[int]
+
+
+class ScenarioExecutionResponse1(TypedDict):
+    mode: Literal['payload']
+    payload: Payload
+
+
+class Scenario4(TypedDict):
+    id: str
+    name: str
+
+
+class ScenarioExecutionResponse2(TypedDict):
+    jobId: str
+    scenario: NotRequired[Scenario4]
+    status: str
+    success: Literal[True]
+
+
+class ScenarioExecutionResponse3(TypedDict):
+    executionTime: float
+    jobId: str
+    logs: list[Any]
+    result: NotRequired[Any]
+    scenario: NotRequired[Scenario4]
+    status: str
+    success: Literal[True]
+
+
+ScenarioExecutionResponse: TypeAlias = (
+    ScenarioExecutionResponse1 | ScenarioExecutionResponse2 | ScenarioExecutionResponse3
+)
 
 
 class ScenarioFile(TypedDict):
@@ -1110,9 +1831,23 @@ class ScenarioJobs(TypedDict):
     jobs: list[ScenarioJob]
 
 
+class User2(TypedDict):
+    email: NotRequired[str | None]
+    firstName: NotRequired[str | None]
+    lastName: NotRequired[str | None]
+
+
+class User1(TypedDict):
+    User: NotRequired[User2 | None]
+    id: str
+
+
 class ScenarioLog(TypedDict):
+    User: NotRequired[User1 | None]
+    apiKeyName: NotRequired[str | None]
     completedAt: str | None
-    createdBy: str
+    createdBy: str | None
+    environmentOverrides: NotRequired[dict[str, Any] | None]
     error: str | None
     id: str
     jobId: str
@@ -1221,12 +1956,12 @@ class SchemaGraphConnectResult(TypedDict):
     upgraded: list[str]
 
 
-class Namespace(TypedDict):
+class DialectVersion(TypedDict):
     cached: str
     live: str
 
 
-class OdataVersion(TypedDict):
+class Namespace(TypedDict):
     cached: str
     live: str
 
@@ -1320,6 +2055,25 @@ class SchemaGraphRefreshResult(TypedDict):
     schemaChanged: bool
 
 
+class AffectedScenario(TypedDict):
+    id: str
+    name: str
+
+
+class AffectedTemplate(TypedDict):
+    id: str
+    name: str
+
+
+class SchemaGraphReleaseReport(TypedDict):
+    affectedScenarios: list[AffectedScenario]
+    affectedTemplates: list[AffectedTemplate]
+    diff: NotRequired[Any]
+    drifted: bool
+    endpointId: str
+    metadataUrl: str
+
+
 class SchemaGraphSampleResult(TypedDict):
     entity: str
     fields: list[SchemaGraphMinedField]
@@ -1346,6 +2100,27 @@ class SchemaGraphTemplateResult(TypedDict):
     name: str
 
 
+class LicenseState(TypedDict):
+    seats: int
+    status: str
+    used: int
+
+
+class Remediation(TypedDict):
+    activateUrl: str
+    contact: str
+    message: str
+
+
+class SeatDenial(TypedDict):
+    code: Literal['license_seat_limit', 'license_not_valid']
+    error: str
+    licenseState: LicenseState
+    remediation: Remediation
+    seats: int
+    used: int
+
+
 class SessionTokens(TypedDict):
     accessToken: str
     expiresIn: int
@@ -1353,7 +2128,7 @@ class SessionTokens(TypedDict):
     refreshToken: str
 
 
-class Set(TypedDict):
+class Set2(TypedDict):
     createdAt: str
     createdBy: str | None
     data: NotRequired[Any]
@@ -1367,7 +2142,7 @@ class Set(TypedDict):
     updatedAt: str
 
 
-class SetDetail(Set):
+class SetDetail(Set2):
     createdByName: str | None
 
 
@@ -1411,7 +2186,7 @@ class TeamSetupResult(TypedDict):
 
 class TeamSkill(TypedDict):
     appliedCount: int
-    body: str
+    body: NotRequired[str]
     createdAt: str
     createdBy: str | None
     description: str
@@ -1423,12 +2198,13 @@ class TeamSkill(TypedDict):
     updatedAt: str
 
 
-class Template2(TypedDict):
+class Template3(TypedDict):
     createdAt: str
     createdBy: str | None
     dbOrderIdx: int
     fields: NotRequired[Any]
     id: str
+    manualOrder: int
     name: str
     projectId: str | None
     seed: int | None
@@ -1447,13 +2223,132 @@ class TemplateFolder(TypedDict):
     teamId: str | None
 
 
+class TemplateReorderResult(TypedDict):
+    folderId: str | None
+    orderedIds: list[str]
+
+
+class Column1(TypedDict):
+    name: str
+    type: str
+
+
+class Subsets(TypedDict):
+    created: list[str]
+    existing: list[str]
+    skipped: int
+
+
+class ToscaDatasetPush(TypedDict):
+    addedColumns: list[str]
+    columns: list[Column1]
+    datasetId: str
+    example: str
+    name: str
+    outcome: Literal['created', 'overwritten', 'recreated', 'copied']
+    rowsCount: int
+    space: str
+    subsets: Subsets
+
+
+class Parameter(TypedDict):
+    name: str
+    type: str
+    value: str
+
+
+class ToscaNativeModuleAttribute(TypedDict):
+    attributes: NotRequired[list[ToscaNativeModuleAttribute]]
+    businessType: str
+    name: str
+    parameters: NotRequired[list[Parameter]]
+
+
 class ToscaOnPremWorkspaces(TypedDict):
     workspaces: list[str]
+
+
+class Attribute(TypedDict):
+    actionMode: Literal['Insert', 'Verify', 'Select', 'Buffer']
+    dataType: Literal['String', 'Numeric', 'Boolean', 'Date']
+    module: Literal['request', 'response']
+    path: str
+    pathType: Literal[
+        'StatusCode', 'Header', 'JsonPath', 'XPath', 'UrlParam', 'Body', 'Resource'
+    ]
+    value: str | None
+
+
+class Header(TypedDict):
+    key: str
+    value: str
+
+
+class PathParameter(TypedDict):
+    name: str
+    value: str
+
+
+class QueryParameter(TypedDict):
+    name: str
+    value: str
+
+
+class ApiMessage(TypedDict):
+    attributes: list[Attribute]
+    endpoint: str
+    headers: list[Header]
+    method: Literal['GET']
+    name: str
+    pathParameters: list[PathParameter]
+    queryParameters: list[QueryParameter]
+    resource: str
+
+
+class Buffer(TypedDict):
+    buffer: str
+    column: str
+    path: str
+
+
+class Connection1(TypedDict):
+    endpoint: str
+    name: str
+    transportType: Literal['Http']
+
+
+class TestCase1(TypedDict):
+    externalId: str
+    name: str
+
+
+class Source1(TypedDict):
+    inputSetId: str
+    inputSetName: str
+    rowIndex: int
+    testCase: TestCase1
+    version: int | Literal['latest']
+
+
+class ToscaSetupManifest(TypedDict):
+    apiMessage: ApiMessage
+    buffers: list[Buffer]
+    connection: Connection1
+    generatedAt: str
+    kind: Literal['datamaker.tosca-setup/v1']
+    notes: list[str]
+    source: Source1
 
 
 class ToscaWorkspaces(TypedDict):
     kind: Literal['tosca-onprem', 'tosca-cloud']
     workspaces: list[str]
+
+
+class UnmaskResult(TypedDict):
+    field: str
+    mappings: dict[str, str]
+    missing: list[str]
 
 
 class UploadResult(TypedDict):
@@ -1469,7 +2364,7 @@ class UploadTextResult(TypedDict):
     url: str
 
 
-class User(TypedDict):
+class User3(TypedDict):
     autoSave: bool | None
     avatar: str | None
     createdAt: str
@@ -1501,7 +2396,7 @@ class WorkerWorkspaceInfo(TypedDict):
     teamId: str
 
 
-class File3(TypedDict):
+class File5(TypedDict):
     downloadUrl: str | None
     filename: str
     folder: str
@@ -1512,7 +2407,7 @@ class File3(TypedDict):
 
 
 class WorkerWorkspaceListing(TypedDict):
-    files: list[File3]
+    files: list[File5]
     scenarioId: str
 
 
@@ -1526,7 +2421,7 @@ class WorkerWorkspaceSyncResult(TypedDict):
     success: Literal[True]
 
 
-class File4(TypedDict):
+class File6(TypedDict):
     filename: str
     id: str
     key: str
@@ -1534,7 +2429,7 @@ class File4(TypedDict):
 
 
 class WorkerWorkspaceUploadResult(TypedDict):
-    file: File4
+    file: File6
     success: Literal[True]
 
 
@@ -1555,6 +2450,25 @@ class WorkspaceUploadResult(TypedDict):
     success: bool
 
 
+class InputSet(TypedDict):
+    createdAt: str
+    createdBy: str | None
+    draft: list[InputSetRow]
+    draftVersion: int
+    id: str
+    name: str
+    projectId: str
+    teamId: str
+    templateId: str
+    testCases: list[InputSetTestCase]
+    updatedAt: str
+
+
+class InputSetDetail(InputSet):
+    columns: list[InputSetColumn]
+    templateName: str
+
+
 class KeyMapEntriesPage(TypedDict):
     entries: list[KeyMapEntry]
     mapName: str
@@ -1563,14 +2477,23 @@ class KeyMapEntriesPage(TypedDict):
     total: int
 
 
+class MaskingDryRunResult(TypedDict):
+    report: MaskingRunReport
+    rows: list[dict[str, Any]]
+
+
 class NewMember(TeamMember):
     firstName: str | None
     lastName: str | None
 
 
-class MemberInviteResult(TypedDict):
+class MemberInviteResult1(TypedDict):
+    invited: NotRequired[Literal[False]]
     newMember: NewMember
     success: Literal[True]
+
+
+MemberInviteResult: TypeAlias = MemberInviteResult1 | MemberInviteResult2
 
 
 class PlanRun(TypedDict):
@@ -1581,6 +2504,7 @@ class PlanRun(TypedDict):
     logs: list[Any]
     mode: str
     planId: str
+    production: Production | None
     results: Results | None
     rows: int
     source: str
@@ -1647,9 +2571,9 @@ SchemaGraphChange: TypeAlias = (
 class SchemaGraphDiffResult(TypedDict):
     cachedRefreshedAt: str
     changes: list[SchemaGraphChange]
+    dialectVersion: DialectVersion
     drifted: bool
     endpointId: str
     metadataUrl: str
     namespace: Namespace
-    odataVersion: OdataVersion
     summary: Summary1

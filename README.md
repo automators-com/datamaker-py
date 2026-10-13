@@ -126,7 +126,8 @@ python scripts/generate_schema.py
 CI runs `python scripts/generate_schema.py --check` and fails if the committed
 types drift from the spec.
 
-Three schemas cannot currently be generated (`SetDetail`, `PackInstallListItem`,
-`SchemaGraphNavigation`): they are composed with `allOf`, which the generator
-merges away rather than emitting as a named class. Methods returning those keep
+Five schemas cannot currently be generated (`SetDetail`, `DatasetDetail`,
+`InputSetDetail`, `PackInstallListItem`, `SchemaGraphNavigation`): they are composed
+with `allOf`, or only appear inside a union, so the generator does not emit them as a
+named class. Methods returning those keep
 `Dict`. The generator script lists them explicitly and fails if the set grows.

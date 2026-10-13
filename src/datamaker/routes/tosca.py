@@ -8,10 +8,11 @@ never holds Tosca credentials or calls Tosca itself.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 from urllib.parse import quote
 
 from .base import BaseClient
+from ..types import ToscaDatasetPush
 from ..error import (
     DataMakerAPIError,
     DataMakerError,
@@ -45,7 +46,9 @@ class ToscaDatasetPushResult:
     # {"created": [names], "existing": [names], "skipped": count}
     subsets: Dict[str, Any] = field(default_factory=dict)
     # The API's response as sent, for fields this class does not name yet.
-    raw: Dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
+    raw: ToscaDatasetPush = field(
+        default_factory=lambda: cast(ToscaDatasetPush, {}), repr=False, compare=False
+    )
 
 
 class ToscaClient(BaseClient):
@@ -224,7 +227,7 @@ class ToscaClient(BaseClient):
         except DataMakerAPIError as error:
             raise self._typed_error(error, on_existing) from error
 
-        data = response.json()
+        data: ToscaDatasetPush = response.json()
         return ToscaDatasetPushResult(
             dataset_id=data["datasetId"],
             name=data["name"],
@@ -232,9 +235,12 @@ class ToscaClient(BaseClient):
             rows_count=data["rowsCount"],
             outcome=data["outcome"],
             example=data["example"],
-            columns=data.get("columns") or [],
-            added_columns=data.get("addedColumns") or [],
-            subsets=data.get("subsets") or {},
+            columns=[
+                {"name": column["name"], "type": column["type"]}
+                for column in data["columns"]
+            ],
+            added_columns=data["addedColumns"],
+            subsets=dict(data["subsets"]),
             raw=data,
         )
 
