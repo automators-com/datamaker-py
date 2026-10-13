@@ -136,6 +136,36 @@ class TestPushToscaDataset:
         assert result.added_columns == ["Region"]
 
     @patch("requests.request")
+    def test_reports_names_tdm_cannot_address(self, mock_request, api_key):
+        mock_request.return_value = ok(
+            {
+                **PUSHED,
+                "subsets": {
+                    "created": ["Checkout"],
+                    "existing": [],
+                    "skipped": 0,
+                    "unaddressable": ["Checkout [smoke]"],
+                },
+                "unaddressableColumns": ["Price [EUR]"],
+            }
+        )
+
+        result = push(api_key, input_set_id="is-1")
+
+        assert result.unaddressable_columns == ["Price [EUR]"]
+        assert result.subsets["unaddressable"] == ["Checkout [smoke]"]
+
+    @patch("requests.request")
+    def test_api_without_unaddressable_fields_still_parses(self, mock_request, api_key):
+        # PUSHED is the response shape from before datamaker#3683.
+        mock_request.return_value = ok()
+
+        result = push(api_key, input_set_id="is-1")
+
+        assert result.unaddressable_columns == []
+        assert "unaddressable" not in result.subsets
+
+    @patch("requests.request")
     def test_subsets_can_be_turned_off(self, mock_request, api_key):
         mock_request.return_value = ok()
 
