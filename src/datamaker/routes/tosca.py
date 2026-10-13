@@ -8,7 +8,7 @@ never holds Tosca credentials or calls Tosca itself.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 from urllib.parse import quote
 
 from .base import BaseClient
@@ -46,7 +46,9 @@ class ToscaDatasetPushResult:
     # {"created": [names], "existing": [names], "skipped": count}
     subsets: Dict[str, Any] = field(default_factory=dict)
     # The API's response as sent, for fields this class does not name yet.
-    raw: Optional[ToscaDatasetPush] = field(default=None, repr=False, compare=False)
+    raw: ToscaDatasetPush = field(
+        default_factory=lambda: cast(ToscaDatasetPush, {}), repr=False, compare=False
+    )
 
 
 class ToscaClient(BaseClient):
