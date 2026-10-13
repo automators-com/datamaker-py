@@ -43,8 +43,12 @@ class ToscaDatasetPushResult:
     columns: List[Dict[str, str]] = field(default_factory=list)
     # Columns an overwrite added to the existing data set
     added_columns: List[str] = field(default_factory=list)
-    # {"created": [names], "existing": [names], "skipped": count}
+    # {"created": [names], "existing": [names], "skipped": count,
+    #  "unaddressable": [values with [ or ], which {TDM[...]} cannot address]}
     subsets: Dict[str, Any] = field(default_factory=dict)
+    # Columns a test step cannot read by name because they hold [ or ]. Their
+    # data is in the data set; rename them to read it with {TDM[...]}.
+    unaddressable_columns: List[str] = field(default_factory=list)
     # The API's response as sent, for fields this class does not name yet.
     raw: ToscaDatasetPush = field(
         default_factory=lambda: cast(ToscaDatasetPush, {}), repr=False, compare=False
@@ -128,7 +132,11 @@ class ToscaClient(BaseClient):
         Returns:
             A ``ToscaDatasetPushResult`` with ``dataset_id``, ``name``,
             ``space``, ``rows_count``, ``outcome``, ``columns``,
-            ``added_columns``, ``subsets`` and ``example``.
+            ``added_columns``, ``subsets``, ``unaddressable_columns`` and
+            ``example``. Names holding ``[`` or ``]`` cannot appear in
+            ``{TDM[...]}``: such columns are listed in
+            ``unaddressable_columns`` and such subset values in
+            ``subsets["unaddressable"]``.
 
         Raises:
             DataMakerError: If the arguments do not describe exactly one source.
@@ -240,7 +248,11 @@ class ToscaClient(BaseClient):
                 for column in data["columns"]
             ],
             added_columns=data["addedColumns"],
-            subsets=dict(data["subsets"]),
+            # "unaddressable" is always present, so callers can index it even
+            # against an API from before datamaker#3683, which omits it.
+            subsets={"unaddressable": [], **dict(data["subsets"])},
+            # Read with .get: an API from before datamaker#3683 omits the key.
+            unaddressable_columns=list(data.get("unaddressableColumns") or []),
             raw=data,
         )
 

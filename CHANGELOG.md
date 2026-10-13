@@ -4,6 +4,19 @@
 > when this file was copied, and the 0.3.0-0.9.0 releases were never recorded here.
 > Left as-is rather than reconstructed from memory.
 
+## 0.11.2
+
+### Patch Changes
+
+- `ToscaDatasetPushResult` gains `unaddressable_columns`: columns a Tosca test step
+  cannot read by name because they contain `[` or `]`, which `{TDM[...]}` uses as
+  delimiters. Their data is still in the data set. `result.subsets["unaddressable"]`
+  lists subset values skipped for the same reason (datamaker#3683). Against an API
+  from before that change, which omits the fields, both are empty lists.
+
+- The generated types are synced to the API at datamaker `08e88b635`: `ToscaDatasetPush`
+  gains `unaddressableColumns` and `subsets.unaddressable`.
+
 ## 0.11.1
 
 ### Patch Changes

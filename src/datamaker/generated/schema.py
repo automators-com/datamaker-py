@@ -2237,6 +2237,7 @@ class Subsets(TypedDict):
     created: list[str]
     existing: list[str]
     skipped: int
+    unaddressable: list[str]
 
 
 class ToscaDatasetPush(TypedDict):
@@ -2249,6 +2250,7 @@ class ToscaDatasetPush(TypedDict):
     rowsCount: int
     space: str
     subsets: Subsets
+    unaddressableColumns: list[str]
 
 
 class Parameter(TypedDict):

@@ -78,7 +78,12 @@ class TestPushToscaDataset:
         assert result.outcome == "created"
         assert result.columns == [{"name": "Customer", "type": "String"}]
         assert result.added_columns == []
-        assert result.subsets == {"created": ["TC-1"], "existing": [], "skipped": 0}
+        assert result.subsets == {
+            "created": ["TC-1"],
+            "existing": [],
+            "skipped": 0,
+            "unaddressable": [],
+        }
         assert result.example == "{TDM[Orders][Customer]}"
         assert result.raw == PUSHED
 
@@ -134,6 +139,36 @@ class TestPushToscaDataset:
         assert payload["space"] == "qa"
         assert result.outcome == "overwritten"
         assert result.added_columns == ["Region"]
+
+    @patch("requests.request")
+    def test_reports_names_tdm_cannot_address(self, mock_request, api_key):
+        mock_request.return_value = ok(
+            {
+                **PUSHED,
+                "subsets": {
+                    "created": ["Checkout"],
+                    "existing": [],
+                    "skipped": 0,
+                    "unaddressable": ["Checkout [smoke]"],
+                },
+                "unaddressableColumns": ["Price [EUR]"],
+            }
+        )
+
+        result = push(api_key, input_set_id="is-1")
+
+        assert result.unaddressable_columns == ["Price [EUR]"]
+        assert result.subsets["unaddressable"] == ["Checkout [smoke]"]
+
+    @patch("requests.request")
+    def test_api_without_unaddressable_fields_still_parses(self, mock_request, api_key):
+        # PUSHED is the response shape from before datamaker#3683.
+        mock_request.return_value = ok()
+
+        result = push(api_key, input_set_id="is-1")
+
+        assert result.unaddressable_columns == []
+        assert result.subsets["unaddressable"] == []
 
     @patch("requests.request")
     def test_subsets_can_be_turned_off(self, mock_request, api_key):

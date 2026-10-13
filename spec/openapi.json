@@ -9724,14 +9724,29 @@
               "skipped": {
                 "description": "Subsets not created because the per-push cap was reached",
                 "type": "integer"
+              },
+              "unaddressable": {
+                "description": "Values not made into subsets because they contain [ or ], which a {TDM[...]} expression cannot address",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               }
             },
             "required": [
               "created",
               "existing",
-              "skipped"
+              "skipped",
+              "unaddressable"
             ],
             "type": "object"
+          },
+          "unaddressableColumns": {
+            "description": "Columns a test step cannot read by name because they contain [ or ]. Their data is in the data set; rename them to read it with {TDM[...]}",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "required": [
@@ -9743,6 +9758,7 @@
           "outcome",
           "addedColumns",
           "subsets",
+          "unaddressableColumns",
           "example"
         ],
         "type": "object"
