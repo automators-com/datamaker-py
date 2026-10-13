@@ -78,7 +78,12 @@ class TestPushToscaDataset:
         assert result.outcome == "created"
         assert result.columns == [{"name": "Customer", "type": "String"}]
         assert result.added_columns == []
-        assert result.subsets == {"created": ["TC-1"], "existing": [], "skipped": 0}
+        assert result.subsets == {
+            "created": ["TC-1"],
+            "existing": [],
+            "skipped": 0,
+            "unaddressable": [],
+        }
         assert result.example == "{TDM[Orders][Customer]}"
         assert result.raw == PUSHED
 
@@ -163,7 +168,7 @@ class TestPushToscaDataset:
         result = push(api_key, input_set_id="is-1")
 
         assert result.unaddressable_columns == []
-        assert "unaddressable" not in result.subsets
+        assert result.subsets["unaddressable"] == []
 
     @patch("requests.request")
     def test_subsets_can_be_turned_off(self, mock_request, api_key):

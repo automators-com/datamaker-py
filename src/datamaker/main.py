@@ -999,7 +999,10 @@ class DataMaker:
         Returns:
             A result with dataset_id, name, space, rows_count, outcome
             ("created", "overwritten", "recreated" or "copied"), columns,
-            added_columns, subsets and example.
+            added_columns, subsets, unaddressable_columns and example.
+            Names holding [ or ] cannot appear in {TDM[...]}: such columns are
+            listed in unaddressable_columns and such subset values in
+            subsets["unaddressable"].
 
         Raises:
             ReadOnlyConnectionError: The connection is read-only (403).

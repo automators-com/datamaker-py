@@ -393,7 +393,8 @@ result.rows_count      # 42
 result.outcome         # "created" | "overwritten" | "recreated" | "copied"
 result.columns         # [{"name": "Customer", "type": "String"}, ...]
 result.added_columns   # columns an overwrite added
-result.subsets         # {"created": [...], "existing": [...], "skipped": 0}
+result.subsets         # {"created": [...], "existing": [...], "skipped": 0, "unaddressable": [...]}
+result.unaddressable_columns  # columns holding [ or ], which {TDM[...]} cannot address
 result.example         # "{TDM[Orders][Customer]}"
 ```
 

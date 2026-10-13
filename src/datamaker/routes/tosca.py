@@ -132,7 +132,11 @@ class ToscaClient(BaseClient):
         Returns:
             A ``ToscaDatasetPushResult`` with ``dataset_id``, ``name``,
             ``space``, ``rows_count``, ``outcome``, ``columns``,
-            ``added_columns``, ``subsets`` and ``example``.
+            ``added_columns``, ``subsets``, ``unaddressable_columns`` and
+            ``example``. Names holding ``[`` or ``]`` cannot appear in
+            ``{TDM[...]}``: such columns are listed in
+            ``unaddressable_columns`` and such subset values in
+            ``subsets["unaddressable"]``.
 
         Raises:
             DataMakerError: If the arguments do not describe exactly one source.
@@ -244,7 +248,9 @@ class ToscaClient(BaseClient):
                 for column in data["columns"]
             ],
             added_columns=data["addedColumns"],
-            subsets=dict(data["subsets"]),
+            # "unaddressable" is always present, so callers can index it even
+            # against an API from before datamaker#3683, which omits it.
+            subsets={"unaddressable": [], **dict(data["subsets"])},
             # Read with .get: an API from before datamaker#3683 omits the key.
             unaddressable_columns=list(data.get("unaddressableColumns") or []),
             raw=data,
