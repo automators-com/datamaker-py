@@ -9,7 +9,7 @@
 ### Patch Changes
 
 - The generated types are synced to the current API: `spec/openapi.json` had fallen 111
-  paths behind. `datamaker.types` goes from 123 to 177 names, including
+  paths behind. `datamaker.types` goes from 120 to 177 names, including
   `ToscaDatasetPush`, the response `push_tosca_dataset` reads, which now types
   `ToscaDatasetPushResult.raw`.
 
