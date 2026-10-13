@@ -72,6 +72,75 @@ def generate(destination: Path) -> None:
         ],
         check=True,
     )
+    restore_underscore_keys(destination)
+    drop_closed_typeddicts(destination)
+
+
+def drop_closed_typeddicts(schema_path: Path) -> None:
+    """Keep the generated module importable with the standard library alone.
+
+    An object the spec marks `additionalProperties: false` is emitted as
+    `TypedDict, closed=True` (PEP 728), which `typing.TypedDict` does not
+    accept before Python 3.15, so the generator switches the whole module to
+    `typing_extensions` - a dependency this package does not have. Closedness
+    only tells a checker that no other keys exist; dropping it loses nothing
+    callers rely on and keeps the types dependency-free.
+    """
+    src = schema_path.read_text()
+    if "closed=True" not in src and "typing_extensions" not in src:
+        return
+    fixed = src.replace("(TypedDict, closed=True):", "(TypedDict):")
+    fixed = fixed.replace(
+        "from typing import Any, Literal, NotRequired, TypeAlias\n\n"
+        "from typing_extensions import TypedDict\n",
+        "from typing import Any, Literal, NotRequired, TypeAlias, TypedDict\n",
+    )
+    if "typing_extensions" in fixed or "closed=" in fixed:
+        print(
+            "The generated schema still needs typing_extensions after the "
+            "closed-TypedDict fix-up. Update drop_closed_typeddicts.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+    schema_path.write_text(fixed)
+
+
+def _property_names(node: object, found: set[str]) -> None:
+    if isinstance(node, dict):
+        props = node.get("properties")
+        if isinstance(props, dict):
+            found.update(props)
+        for value in node.values():
+            _property_names(value, found)
+    elif isinstance(node, list):
+        for value in node:
+            _property_names(value, found)
+
+
+def restore_underscore_keys(schema_path: Path) -> None:
+    """Undo the generator's renaming of keys that start with an underscore.
+
+    The generator cannot emit `_inference` as a field, so it writes
+    `field_inference` and, for pydantic, an alias back to the real key. A
+    TypedDict has no aliases: the renamed field simply describes a key the API
+    never sends. An underscore-prefixed name is valid in a TypedDict class
+    body, so the real key is put back. Only names the spec really has with an
+    underscore are touched, and never one the spec also has in `field_` form.
+    """
+    names: set[str] = set()
+    _property_names(json.loads(SPEC.read_text()), names)
+    underscored = {n for n in names if n.startswith("_") and f"field{n}" not in names}
+    if not underscored:
+        return
+    src = schema_path.read_text()
+    fixed = re.sub(
+        r"^(    )field(_\w+)(?=:)",
+        lambda m: m.group(1) + m.group(2) if m.group(2) in underscored else m.group(0),
+        src,
+        flags=re.M,
+    )
+    if fixed != src:
+        schema_path.write_text(fixed)
 
 
 # Names that cannot be recovered, with the reason. `allOf` composition (zod's
@@ -80,6 +149,8 @@ def generate(destination: Path) -> None:
 # the gap is explicit; the audit fails if this list grows.
 KNOWN_UNRECOVERABLE = {
     "SetDetail": "allOf composition (Set + createdByName) is merged away",
+    "DatasetDetail": "allOf composition (Dataset + createdByName) is merged away",
+    "InputSetDetail": "allOf composition (InputSet + columns, templateName)",
     "PackInstallListItem": "allOf composition (PackInstall + installedByName)",
     "SchemaGraphNavigation": "only referenced inside a union; no standalone class",
 }

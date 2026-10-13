@@ -4,6 +4,27 @@
 > when this file was copied, and the 0.3.0-0.9.0 releases were never recorded here.
 > Left as-is rather than reconstructed from memory.
 
+## 0.11.1
+
+### Patch Changes
+
+- The generated types are synced to the current API: `spec/openapi.json` had fallen 111
+  paths behind. `datamaker.types` goes from 123 to 177 names, including
+  `ToscaDatasetPush`, the response `push_tosca_dataset` reads, which now types
+  `ToscaDatasetPushResult.raw`.
+
+- `GeneratedTemplateField` now describes the keys the API sends, `_inference` and
+  `_inferenceReason`. The generator had renamed them to `field_inference` and
+  `field_inferenceReason`, which no response contains.
+
+- The generated module stays importable with the standard library alone. The API now
+  marks some objects `additionalProperties: false`, which the generator emits as a
+  closed `TypedDict` imported from `typing_extensions`; the closedness is dropped
+  instead of adding a dependency.
+
+- `DatasetDetail` and `InputSetDetail` join the schemas that cannot be generated,
+  because they are composed with `allOf`.
+
 ## 0.11.0
 
 ### Minor Changes
