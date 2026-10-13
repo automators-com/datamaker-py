@@ -51,6 +51,35 @@ if __name__ == "__main__":
 
 ```
 
+## Push a set into Tosca Cloud
+
+`push_tosca_dataset` creates or replaces a native Tosca Cloud data set from a saved
+set, an input set version, a dataset or inline rows. A Tosca test step reads it with
+`{TDM[<data set>][<subset>][<column>]}`.
+
+```python
+from datamaker import DataMaker, ToscaDatasetSchemaChangedError
+
+dm = DataMaker()
+
+try:
+    result = dm.push_tosca_dataset(
+        integration_id,
+        name="Orders",
+        input_set_id="is_123",        # or set_id=..., dataset_id=..., rows=[...]
+        on_existing="overwrite",      # "fail" (default) | "overwrite" | "new"
+    )
+    print(result.dataset_id, result.rows_count, result.outcome, result.example)
+except ToscaDatasetSchemaChangedError as e:
+    # The rows dropped a column the data set has. Pass on_schema_change="recreate"
+    # to delete and recreate it instead.
+    print("removed:", e.removed_columns, "added:", e.added_columns)
+```
+
+An input set gets one Tosca subset per test case by default; `subsets_by` picks another
+column or turns it off with `False`. `get_tosca_datasets(integration_id)` lists what a
+space already holds.
+
 ## Autocomplete Types
 
 This SDK automatically generates TypeScript autocomplete definitions for use in the [datamaker application](https://github.com/automators/datamaker). 

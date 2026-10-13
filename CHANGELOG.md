@@ -4,6 +4,34 @@
 > when this file was copied, and the 0.3.0-0.9.0 releases were never recorded here.
 > Left as-is rather than reconstructed from memory.
 
+## 0.11.0
+
+### Minor Changes
+
+- `push_tosca_dataset(integration_id, name, ...)` creates or replaces a native Tosca
+  Cloud data set, the kind a test step reads with `{TDM[<data set>][<subset>][<column>]}`.
+  Exactly one source is accepted (`set_id`, `input_set_id` with an optional `version`,
+  `dataset_id`, or inline `rows`) and that is checked before any request is made.
+  `on_existing`, `on_schema_change`, `subsets_by` and `allow_unlocked` map to the API's
+  options. It returns a `ToscaDatasetPushResult` with `dataset_id`, `name`, `space`,
+  `rows_count`, `outcome`, `columns`, `added_columns`, `subsets` and `example`.
+
+- `get_tosca_datasets(integration_id, space=None)` lists the data sets in a Tosca Cloud
+  space.
+
+- API failures now raise `DataMakerAPIError`, a `DataMakerError` subclass that adds
+  `status_code` and the decoded `body`. Existing `except DataMakerError` handlers are
+  unaffected. A failed Tosca push narrows further: `ReadOnlyConnectionError` (403),
+  `ToscaDatasetExistsError` and `ToscaDatasetLockedError` (409, with `dataset_id`),
+  `ToscaDatasetSchemaChangedError`
+  (409, with `added_columns` and `removed_columns`) and `ToscaDatasetTooLargeError`
+  (413, with `max_rows` or `max_bytes`).
+
+- The error classes are importable from the package root (`from datamaker import
+  DataMakerError`), as `llms.txt` already documented.
+
+- The autocomplete artifact now lists keyword-only parameters, which it used to drop.
+
 ## 0.10.0
 
 ### Minor Changes

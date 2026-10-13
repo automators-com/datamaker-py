@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from typing import Any, Optional, Dict, List
+from typing import Any, Optional, Dict, List, Union
 from .types import WorkspaceUploadResult
 from .routes.base import BaseClient
 from .routes.generation import GenerationClient
@@ -26,6 +26,7 @@ from .routes.sets import SetsClient
 from .routes.plans import PlansClient
 from .routes.masking_policies import MaskingPoliciesClient
 from .routes.keymaps import KeyMapsClient
+from .routes.tosca import ToscaClient, ToscaDatasetPushResult
 
 load_dotenv()
 
@@ -79,6 +80,7 @@ class DataMaker:
         self._masking_policies = MaskingPoliciesClient(
             api_key, default_headers, base_url, verify
         )
+        self._tosca = ToscaClient(api_key, default_headers, base_url, verify)
 
         # Maintain backward compatibility
         self.api_key = self._generation.api_key
@@ -939,6 +941,103 @@ class DataMaker:
             project_id=project_id,
         )
 
+    # =================== TOSCA METHODS ===================
+    def get_tosca_datasets(self, integration_id: str, space: Optional[str] = None):
+        """List the test data sets in a Tosca Cloud space.
+
+        Args:
+            integration_id: The Tosca Cloud connection to read through.
+            space: The Tosca Cloud space (id or name). Defaults to "default".
+
+        Returns:
+            A dictionary with space and items, each item carrying id, name,
+            subsetCount and isLocked.
+        """
+        return self._tosca.get_tosca_datasets(integration_id, space)
+
+    def push_tosca_dataset(
+        self,
+        integration_id: str,
+        name: str,
+        *,
+        set_id: Optional[str] = None,
+        input_set_id: Optional[str] = None,
+        version: Optional[Union[int, str]] = None,
+        dataset_id: Optional[str] = None,
+        rows: Optional[List[Dict[str, Any]]] = None,
+        allow_unlocked: bool = False,
+        on_existing: str = "fail",
+        on_schema_change: str = "refuse",
+        subsets_by: Optional[Union[str, bool]] = None,
+        space: str = "default",
+    ) -> ToscaDatasetPushResult:
+        """Create or replace a Tosca Cloud data set from DataMaker rows.
+
+        A Tosca test step reads the data set with
+        {TDM[<data set>][<subset>][<column>]}. Give exactly one source: set_id,
+        input_set_id (with an optional version), dataset_id or rows.
+
+        Args:
+            integration_id: The Tosca Cloud connection to push through.
+            name: The Tosca data set name. Unique per space.
+            set_id: Push the rows of this DataMaker set. It must be locked
+                unless allow_unlocked is True.
+            input_set_id: Push a frozen version of this input set.
+            version: The input set version number, or "latest" (the default).
+            dataset_id: Push the rows of this DataMaker dataset.
+            rows: Inline rows, each a dictionary of column name to value.
+            allow_unlocked: Push a set that is not locked.
+            on_existing: "fail" (default), "overwrite" (replace the rows,
+                keeping the id and subsets) or "new" (a copy beside it).
+            on_schema_change: On overwrite, when the rows drop a column:
+                "refuse" (default) or "recreate" (the id and subsets are lost).
+            subsets_by: Create one subset per distinct value of this column.
+                An input set is split by "TestCase" by default; False turns
+                it off.
+            space: The Tosca Cloud space (id or name). Defaults to "default".
+
+        Returns:
+            A result with dataset_id, name, space, rows_count, outcome
+            ("created", "overwritten", "recreated" or "copied"), columns,
+            added_columns, subsets and example.
+
+        Raises:
+            ReadOnlyConnectionError: The connection is read-only (403).
+            ToscaDatasetExistsError: The name is taken and on_existing is
+                "fail" (409). Carries dataset_id.
+            ToscaDatasetLockedError: An overwrite of a data set that is
+                locked in Tosca Cloud (409). Carries dataset_id.
+            ToscaDatasetSchemaChangedError: An overwrite would drop columns
+                (409). Carries added_columns and removed_columns.
+            ToscaDatasetTooLargeError: Too many rows or bytes for one push
+                (413). Carries max_rows or max_bytes when the API sends them.
+
+        Example:
+            >>> dm = DataMaker()
+            >>> result = dm.push_tosca_dataset(
+            ...     integration_id,
+            ...     name="Orders",
+            ...     input_set_id="is_123",
+            ...     on_existing="overwrite",
+            ... )
+            >>> result.example
+            '{TDM[Orders][Customer]}'
+        """
+        return self._tosca.push_tosca_dataset(
+            integration_id,
+            name,
+            set_id=set_id,
+            input_set_id=input_set_id,
+            version=version,
+            dataset_id=dataset_id,
+            rows=rows,
+            allow_unlocked=allow_unlocked,
+            on_existing=on_existing,
+            on_schema_change=on_schema_change,
+            subsets_by=subsets_by,
+            space=space,
+        )
+
     # =================== PROPERTY ACCESS TO CLIENTS ===================
     # For advanced users who want direct access to specific clients
 
@@ -1174,3 +1273,8 @@ class DataMaker:
     def masking_policies(self):
         """Access to masking policies client."""
         return self._masking_policies
+
+    @property
+    def tosca(self):
+        """Access to Tosca client."""
+        return self._tosca
