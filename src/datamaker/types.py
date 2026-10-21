@@ -176,6 +176,7 @@ TeamSkill = _s.TeamSkill
 Template = _s.Template3
 TemplateFolder = _s.TemplateFolder
 TemplateReorderResult = _s.TemplateReorderResult
+ToscaDatasetPullManifest = _s.ToscaDatasetPullManifest
 ToscaDatasetPush = _s.ToscaDatasetPush
 ToscaNativeModuleAttribute = _s.ToscaNativeModuleAttribute
 ToscaOnPremWorkspaces = _s.ToscaOnPremWorkspaces

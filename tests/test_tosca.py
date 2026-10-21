@@ -10,6 +10,7 @@ from src.datamaker.error import (
     DataMakerAPIError,
     DataMakerError,
     ReadOnlyConnectionError,
+    ToscaDatasetAppendIncompleteError,
     ToscaDatasetExistsError,
     ToscaDatasetLockedError,
     ToscaDatasetSchemaChangedError,
@@ -201,6 +202,44 @@ class TestPushToscaDataset:
         assert payload["onExisting"] == "new"
         assert result.outcome == "copied"
 
+    @patch("requests.request")
+    def test_append(self, mock_request, api_key):
+        mock_request.return_value = ok(
+            {**PUSHED, "outcome": "appended", "rowsCount": 7, "appendedRows": 2},
+            status_code=200,
+        )
+        rows = [{"Customer": "0042"}, {"Customer": "0043"}]
+
+        result = push(api_key, rows=rows, on_existing="append")
+
+        assert mock_request.call_args.kwargs["json"]["onExisting"] == "append"
+        assert result.outcome == "appended"
+        assert result.appended_rows == 2
+        assert result.rows_count == 7
+        assert result.counts == {}
+
+    @patch("requests.request")
+    def test_sync(self, mock_request, api_key):
+        counts = {
+            "appended": 1,
+            "updated": 0,
+            "refreshed": 0,
+            "unchanged": 4,
+            "deleted": 0,
+            "keptUsed": 1,
+            "untouched": 0,
+        }
+        mock_request.return_value = ok(
+            {**PUSHED, "outcome": "synced", "counts": counts}, status_code=200
+        )
+
+        result = push(api_key, input_set_id="is-1", on_existing="sync")
+
+        assert mock_request.call_args.kwargs["json"]["onExisting"] == "sync"
+        assert result.outcome == "synced"
+        assert result.counts == counts
+        assert result.appended_rows is None
+
 
 def test_hand_built_result_has_an_empty_raw():
     result = ToscaDatasetPushResult(
@@ -231,6 +270,7 @@ class TestPushToscaDatasetValidation:
             ({"set_id": "s", "on_existing": "replace"}, "on_existing must be one of"),
             ({"set_id": "s", "on_schema_change": "drop"}, "on_schema_change must be"),
             ({"set_id": "s", "subsets_by": True}, "subsets_by must be"),
+            ({"rows": [{"a": 1}], "on_existing": "sync"}, "needs input_set_id"),
         ],
     )
     @patch("requests.request")
@@ -417,6 +457,27 @@ class TestPushToscaDatasetErrors:
         assert type(raised.value) is DataMakerAPIError
         assert raised.value.status_code == status_code
         assert raised.value.body == body
+
+    @patch("requests.request")
+    def test_append_stopped_part_way(self, mock_request, api_key):
+        body = {
+            "error": "The append stopped part way: 2 of 4 rows were added.",
+            "code": "appendIncomplete",
+            "datasetId": "TDS-1",
+            "appendedRows": 2,
+            "notAppendedRows": [2, 3],
+        }
+        mock_request.return_value = failed(502, body)
+        rows = [{"Customer": str(i)} for i in range(4)]
+
+        with pytest.raises(ToscaDatasetAppendIncompleteError) as raised:
+            push(api_key, rows=rows, on_existing="append")
+
+        assert raised.value.status_code == 502
+        assert raised.value.dataset_id == "TDS-1"
+        assert raised.value.appended_rows == 2
+        assert raised.value.not_appended_rows == [2, 3]
+        assert [rows[i] for i in raised.value.not_appended_rows] == rows[2:]
 
     @patch("requests.request")
     def test_typed_errors_are_still_datamaker_errors(self, mock_request, api_key):
