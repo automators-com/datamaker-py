@@ -758,6 +758,26 @@
               "string",
               "null"
             ]
+          },
+          "uncoveredDetail": {
+            "description": "The outcome behind attach-failed, e.g. allowance-exhausted",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "uncoveredReason": {
+            "description": "Why no entitlement covers this workspace; null when one does",
+            "enum": [
+              "never-licensed",
+              "attach-failed",
+              "detached",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -2557,6 +2577,7 @@
             "type": "string"
           },
           "lastPull": {
+            "description": "The newest read of any test case, failed or not (see `ok`), or null when nothing has read the rows",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/InputSetPull"
@@ -2583,7 +2604,19 @@
                 "id": {
                   "type": "string"
                 },
+                "lastFailure": {
+                  "description": "The newest failed read that named this test case, while no later read naming it has succeeded. A whole-set read neither sets nor clears it",
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InputSetPull"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "lastPull": {
+                  "description": "The newest successful read that named this test case or read the whole set. A failed read is never a pull",
                   "oneOf": [
                     {
                       "$ref": "#/components/schemas/InputSetPull"
@@ -2601,7 +2634,8 @@
                 "id",
                 "name",
                 "externalId",
-                "lastPull"
+                "lastPull",
+                "lastFailure"
               ],
               "type": "object"
             },
@@ -3429,6 +3463,26 @@
           "required": {
             "description": "Whether this deployment demands a license at all",
             "type": "boolean"
+          },
+          "seatRefusals": {
+            "properties": {
+              "last7Days": {
+                "description": "Signups refused in the trailing 7 days",
+                "type": "integer"
+              },
+              "lastAt": {
+                "description": "ISO-8601 timestamp of the most recent refusal",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "last7Days",
+              "lastAt"
+            ],
+            "type": "object"
           },
           "seatUsage": {
             "properties": {
@@ -9655,6 +9709,270 @@
         ],
         "type": "object"
       },
+      "ToscaDatasetPullManifest": {
+        "properties": {
+          "apiMessage": {
+            "properties": {
+              "attributes": {
+                "items": {
+                  "properties": {
+                    "actionMode": {
+                      "enum": [
+                        "Insert",
+                        "Verify",
+                        "Select",
+                        "Buffer"
+                      ],
+                      "type": "string"
+                    },
+                    "dataType": {
+                      "enum": [
+                        "String",
+                        "Numeric",
+                        "Boolean",
+                        "Date"
+                      ],
+                      "type": "string"
+                    },
+                    "module": {
+                      "enum": [
+                        "request",
+                        "response"
+                      ],
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "pathType": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "module",
+                    "pathType",
+                    "path",
+                    "value",
+                    "actionMode",
+                    "dataType"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "body": {
+                "description": "The JSON request body Tosca sends",
+                "type": "string"
+              },
+              "endpoint": {
+                "description": "Origin only; the resource carries the path",
+                "type": "string"
+              },
+              "headers": {
+                "items": {
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "value"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "method": {
+                "const": "POST",
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "pathParameters": {
+                "items": {
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "queryParameters": {
+                "items": {
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "resource": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "method",
+              "endpoint",
+              "resource",
+              "headers",
+              "pathParameters",
+              "queryParameters",
+              "body",
+              "attributes"
+            ],
+            "type": "object"
+          },
+          "buffers": {
+            "items": {
+              "properties": {
+                "buffer": {
+                  "type": "string"
+                },
+                "field": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "field",
+                "buffer",
+                "path"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "connection": {
+            "properties": {
+              "endpoint": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "transportType": {
+                "const": "Http",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "endpoint",
+              "transportType"
+            ],
+            "type": "object"
+          },
+          "generatedAt": {
+            "type": "string"
+          },
+          "kind": {
+            "const": "datamaker.tosca-dataset-pull/v1",
+            "type": "string"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "source": {
+            "additionalProperties": true,
+            "description": "The source's ids, as the push's `source` takes them",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "set",
+                  "inputSet",
+                  "dataset"
+                ],
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "name"
+            ],
+            "type": "object"
+          },
+          "target": {
+            "properties": {
+              "dataSet": {
+                "type": "string"
+              },
+              "integrationId": {
+                "type": "string"
+              },
+              "onExisting": {
+                "enum": [
+                  "fail",
+                  "overwrite",
+                  "sync"
+                ],
+                "type": "string"
+              },
+              "space": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "integrationId",
+              "space",
+              "dataSet",
+              "onExisting"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "kind",
+          "generatedAt",
+          "source",
+          "target",
+          "connection",
+          "apiMessage",
+          "buffers",
+          "notes"
+        ],
+        "type": "object"
+      },
       "ToscaDatasetPush": {
         "properties": {
           "addedColumns": {
@@ -9662,6 +9980,10 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "appendedRows": {
+            "description": "Rows an \"append\" push added",
+            "type": "integer"
           },
           "columns": {
             "description": "The columns as Tosca typed them: String, Double, Boolean or DateTime (Tosca makes date-like text a DateTime)",
@@ -9682,6 +10004,45 @@
             },
             "type": "array"
           },
+          "counts": {
+            "description": "What a \"sync\" push did to the rows",
+            "properties": {
+              "appended": {
+                "type": "integer"
+              },
+              "deleted": {
+                "type": "integer"
+              },
+              "keptUsed": {
+                "description": "Rows a test has used, kept although their sheet row changed or was removed",
+                "type": "integer"
+              },
+              "refreshed": {
+                "description": "Unchanged rows rewritten only to fill a column the push added",
+                "type": "integer"
+              },
+              "unchanged": {
+                "type": "integer"
+              },
+              "untouched": {
+                "description": "Rows without a DataMakerRow key, left as they are",
+                "type": "integer"
+              },
+              "updated": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "appended",
+              "updated",
+              "refreshed",
+              "unchanged",
+              "deleted",
+              "keptUsed",
+              "untouched"
+            ],
+            "type": "object"
+          },
           "datasetId": {
             "type": "string"
           },
@@ -9697,7 +10058,9 @@
               "created",
               "overwritten",
               "recreated",
-              "copied"
+              "copied",
+              "appended",
+              "synced"
             ],
             "type": "string"
           },
@@ -11792,7 +12155,7 @@
                 }
               }
             },
-            "description": "The token is unknown, expired, or already spent (reuse revokes the whole family)"
+            "description": "The token is unknown, expired, or already spent (reuse revokes the whole family), or its account no longer exists (the family is revoked)"
           },
           "403": {
             "content": {
@@ -19262,7 +19625,7 @@
     },
     "/input-sets/{id}/rows": {
       "get": {
-        "description": "The rows a test run uses: a version's dataset (the supplied values with every other field generated), optionally only one test case's. This is what a Tosca test step calls with a read-only API key, e.g. GET /input-sets/:id/rows?testCase=<Tosca test case id>. Each row carries TestCase, TestCaseId and Row (its position within the test case). Every read is recorded in the audit trail.",
+        "description": "The rows a test run uses: a version's dataset (the supplied values with every other field generated; a supplied cell left blank is null), optionally only one test case's. This is what a Tosca test step calls with a read-only API key, e.g. GET /input-sets/:id/rows?testCase=<Tosca test case id>. Each row carries TestCase, TestCaseId and Row (its position within the test case). Every read is recorded in the audit trail.",
         "operationId": "getInput-setsByIdRows",
         "parameters": [
           {
@@ -19971,7 +20334,7 @@
                 }
               }
             },
-            "description": "The sheet changed since `baseVersion`, its test case list changed since `baseTestCases`, or another version was just created"
+            "description": "The sheet changed since `baseVersion`, its test case list changed since `baseTestCases`, another version was just created, or nothing changed since the latest version (`code: \"unchanged\"`)"
           },
           "422": {
             "content": {
@@ -21405,6 +21768,165 @@
         ]
       }
     },
+    "/integrations/{id}/tosca/dataset-pull-setup": {
+      "get": {
+        "description": "The Tosca Cloud setup for pulling a DataMaker set, input set version or dataset into a Tosca test data set from inside Tosca (#3736): one API message that calls `POST /integrations/:id/tosca/datasets` for this connection, so each run of the test case creates or refreshes the data set with the push's own checks and audit trail. The source is checked the way the push checks it, so a setup that would fail on every run is refused here. The API key is a placeholder: whoever applies it supplies a READ_WRITE key.",
+        "operationId": "getIntegrationsByIdToscaDataset-pull-setup",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "description": "The Tosca data set the pull creates or refreshes",
+              "maxLength": 120,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "space",
+            "required": false,
+            "schema": {
+              "description": "Tosca Cloud space (id or name). Defaults to `default`.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "setId",
+            "required": false,
+            "schema": {
+              "description": "Pull this set",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "allowUnlocked",
+            "required": false,
+            "schema": {
+              "description": "Pull a set that is not locked",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inputSetId",
+            "required": false,
+            "schema": {
+              "description": "Pull this input set",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "description": "The input set version to pull, or latest (the default) to follow the newest",
+              "pattern": "^(latest|[1-9][0-9]{0,8})$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "datasetId",
+            "required": false,
+            "schema": {
+              "description": "Pull this dataset",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "onExisting",
+            "required": false,
+            "schema": {
+              "description": "What each run does when the data set exists. Defaults to \"sync\" for an input set and \"overwrite\" otherwise. \"new\" is not offered: Tosca names the copy differently, so every later run would fail its check and leave another copy.",
+              "enum": [
+                "fail",
+                "overwrite",
+                "sync"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToscaDatasetPullManifest"
+                }
+              }
+            },
+            "description": "The manifest for that source and data set"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not a Tosca Cloud connection, or a source the push refuses (an unlocked set, a dataset that is not ready, a sync from anything but an input set)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "The connection is read-only, or the caller may not read the source"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "The set, input set, version or dataset does not exist"
+          }
+        },
+        "tags": [
+          "Integrations"
+        ]
+      }
+    },
     "/integrations/{id}/tosca/datasets": {
       "get": {
         "description": "List the test data sets in a Tosca Cloud space (Prepare > Test data). Tosca's test data API is not a published Tricentis API.",
@@ -21520,7 +22042,7 @@
         ]
       },
       "post": {
-        "description": "Create or replace a Tosca Cloud test data set from a DataMaker set, input set version, dataset or inline rows. Test steps read it as {TDM[<data set>][<subset>][<column>]}. The rows are read server-side with the caller's access (set:read, inputSetEntry:read or dataset:read) and uploaded as one JSON file, so text such as '0012' stays text. An input set gets one subset per test case by default. Tosca's test data API is not a published Tricentis API. Every push is recorded in the audit trail.",
+        "description": "Create, replace or add rows to a Tosca Cloud test data set from a DataMaker set, input set version, dataset or inline rows. Test steps read it as {TDM[<data set>][<subset>][<column>]}. The rows are read server-side with the caller's access (set:read, inputSetEntry:read or dataset:read) and uploaded as one JSON file, so text such as '0012' stays text; an append adds them row by row. An input set gets one subset per test case by default. Tosca's test data API is not a published Tricentis API. Every push is recorded in the audit trail.",
         "operationId": "postIntegrationsByIdToscaDatasets",
         "parameters": [
           {
@@ -21545,11 +22067,13 @@
                   },
                   "onExisting": {
                     "default": "fail",
-                    "description": "When a data set of that name exists: \"fail\" refuses, \"overwrite\" replaces its rows (keeping its id and subsets), \"new\" lets Tosca create a copy beside it.",
+                    "description": "When a data set of that name exists: \"fail\" refuses, \"overwrite\" replaces its rows (keeping its id and subsets), \"new\" lets Tosca create a copy beside it. \"append\" adds the rows to it and leaves every existing row as it is, used or not, so a scenario can feed fresh rows to tests that consume them; it creates the data set when there is none, takes at most 1000 rows, and adds the rows again if pushed again. \"sync\" is for an input set only: it creates the data set, or brings it in line row by row. An unchanged row is left alone, a changed row replaces its unused Tosca row or, once a test has used it, is appended as a new row, and a row removed from the sheet is deleted from Tosca unless a test used it. Rows carry a DataMakerRow key column.",
                     "enum": [
                       "fail",
                       "overwrite",
-                      "new"
+                      "new",
+                      "append",
+                      "sync"
                     ],
                     "type": "string"
                   },
@@ -21745,7 +22269,7 @@
                 }
               }
             },
-            "description": "The body's `code` says why: \"exists\" (the name is taken and onExisting is fail), \"locked\" (Tosca holds the data set) or \"schemaChanged\" (an overwrite would drop columns; `added` and `removed` list them)"
+            "description": "The body's `code` says why: \"exists\" (the name is taken and onExisting is fail), \"locked\" (Tosca holds the data set), \"schemaChanged\" (an overwrite would drop columns; `added` and `removed` list them), \"notSynced\" (a sync found a data set of that name it did not create), \"createdConcurrently\" (another push created the name after this one found it free, so no second one was made) or \"recreatedConcurrently\" (another push recreated it after this recreate deleted it, so no second one was made; `deletedDatasetId` names the deleted one)"
           },
           "413": {
             "content": {
@@ -21783,7 +22307,7 @@
                 }
               }
             },
-            "description": "Tosca refused the data set or could not be reached"
+            "description": "Tosca refused the data set or could not be reached. `code` \"listingIncomplete\" means Tosca's data set listing ended early without the name and its upload check did not say whether the name is taken, so nothing was created. `code` \"appendIncomplete\" means an append stopped part way: `appendedRows` were added and `notAppendedRows` lists the indexes of the pushed rows that were not"
           }
         },
         "tags": [
@@ -23942,9 +24466,31 @@
                             "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                             "type": "integer"
                           },
+                          "claimDomain": {
+                            "description": "Enterprise claim rule: the same, for any address at this domain",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "claimEmail": {
+                            "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "claimIgnored": {
+                            "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                            "type": "boolean"
+                          },
                           "coreSystems": {
                             "description": "Declared core systems; 0 = unlimited",
                             "type": "integer"
+                          },
+                          "created": {
+                            "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                            "type": "boolean"
                           },
                           "createdAt": {
                             "format": "date-time",
@@ -24079,7 +24625,9 @@
                           "revokedBy",
                           "revokeNote",
                           "updatedAt",
-                          "updatedBy"
+                          "updatedBy",
+                          "claimEmail",
+                          "claimDomain"
                         ],
                         "type": "object"
                       },
@@ -24128,7 +24676,7 @@
         ]
       },
       "post": {
-        "description": "Provision a Cloud workspace entitlement from Auth",
+        "description": "Provision a Cloud workspace entitlement from Auth, against a workspace or a claim rule",
         "operationId": "postInternalCloud-licenses",
         "parameters": [],
         "requestBody": {
@@ -24140,6 +24688,18 @@
                     "maximum": 10000000,
                     "minimum": 0,
                     "type": "integer"
+                  },
+                  "claimDomain": {
+                    "description": "Enterprise only: a bare email domain the entitlement waits for. Public mailbox domains are refused",
+                    "maxLength": 253,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "claimEmail": {
+                    "description": "Owner email the entitlement waits for; lowercased server-side",
+                    "format": "email",
+                    "maxLength": 320,
+                    "type": "string"
                   },
                   "coreSystems": {
                     "maximum": 10000,
@@ -24179,13 +24739,13 @@
                     "type": "integer"
                   },
                   "teamId": {
+                    "description": "The workspace to cover. Omit it to issue against a claim rule instead",
                     "maxLength": 256,
                     "minLength": 1,
                     "type": "string"
                   }
                 },
                 "required": [
-                  "teamId",
                   "customerId",
                   "issuedBy"
                 ],
@@ -24211,9 +24771,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -24348,13 +24930,15 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
               }
             },
-            "description": "The matching active entitlement already existed"
+            "description": "The matching live entitlement already existed and nothing was created (`created: false`)"
           },
           "201": {
             "content": {
@@ -24372,9 +24956,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -24509,13 +25115,25 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
               }
             },
-            "description": "Provisioned Cloud workspace entitlement"
+            "description": "Provisioned Cloud workspace entitlement (`created: true`). A claim-only entitlement is created unclaimed, after existing unlicensed workspaces whose owner matches the claim are swept onto it"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "No teamId, claimEmail or claimDomain; a domain claim off the enterprise plan; or a public mailbox domain"
           },
           "401": {
             "content": {
@@ -24545,7 +25163,7 @@
                 }
               }
             },
-            "description": "The DataMaker team does not exist"
+            "description": "The DataMaker team does not exist (`code: team_not_found`)"
           },
           "409": {
             "content": {
@@ -24555,7 +25173,7 @@
                 }
               }
             },
-            "description": "The team already belongs to another customer entitlement"
+            "description": "The team already belongs to another customer entitlement (`code: team_already_covered`), or another customer's live entitlement holds the same claim (`code: claim_conflict`)"
           },
           "503": {
             "content": {
@@ -25154,9 +25772,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -25291,7 +25931,9 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
@@ -25385,9 +26027,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -25522,7 +26186,9 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
@@ -25615,9 +26281,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -25752,7 +26440,9 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
@@ -25881,9 +26571,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -26018,7 +26730,9 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
@@ -26202,6 +26916,33 @@
                               "type": "object"
                             },
                             "type": "array"
+                          },
+                          "suggestedLicenseIds": {
+                            "description": "Live entitlements whose claimEmail or claimDomain matches the workspace creator's (earliest OWNER's) email; empty when none, and for a covered workspace",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "uncoveredDetail": {
+                            "description": "For attach-failed, the outcome (e.g. allowance-exhausted, license-revoked); for detached, license-revoked when revocation did it",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "uncoveredReason": {
+                            "description": "Why no entitlement covers this workspace; null when one does",
+                            "enum": [
+                              "never-licensed",
+                              "attach-failed",
+                              "detached",
+                              null
+                            ],
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           }
                         },
                         "required": [
@@ -26211,7 +26952,10 @@
                           "memberCount",
                           "cloudLicenseId",
                           "owners",
-                          "owner"
+                          "owner",
+                          "uncoveredReason",
+                          "uncoveredDetail",
+                          "suggestedLicenseIds"
                         ],
                         "type": "object"
                       },
@@ -41406,7 +42150,7 @@
                 }
               }
             },
-            "description": "The team has no seat available under its current license"
+            "description": "No seat available under the license: for an existing account, the team's; for an address with no account on a self-hosted server, the deployment's (`license_seat_limit` / `license_not_valid`)"
           },
           "403": {
             "content": {
@@ -42306,8 +43050,11 @@
                     "type": "string"
                   },
                   "createdBy": {
-                    "description": "A valid team member id",
-                    "type": "string"
+                    "description": "Ignored: the API records the creator itself",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "dbOrderIdx": {
                     "description": "Not sure if this is needed",
@@ -42416,7 +43163,7 @@
                 }
               }
             },
-            "description": "The fields declare an invalid temporal group, or two input set columns would share a header"
+            "description": "The body fails validation (`error` names each problem), the fields declare an invalid temporal group, or two input set columns would share a header"
           },
           "401": {
             "content": {
@@ -42701,8 +43448,11 @@
                     "type": "string"
                   },
                   "createdBy": {
-                    "description": "A valid team member id",
-                    "type": "string"
+                    "description": "Ignored: the API records the creator itself",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "dbOrderIdx": {
                     "description": "Not sure if this is needed",
@@ -42811,7 +43561,7 @@
                 }
               }
             },
-            "description": "The template has no team/project scope, the fields declare an invalid temporal group, or two input set columns would share a header"
+            "description": "The body fails validation (`error` names each problem), the template has no team/project scope, the fields declare an invalid temporal group, or two input set columns would share a header"
           },
           "401": {
             "content": {
@@ -43268,7 +44018,7 @@
         ]
       },
       "post": {
-        "description": "Create a new user",
+        "description": "Create a new user, with a personal workspace it owns",
         "operationId": "postUsers",
         "parameters": [],
         "requestBody": {
@@ -43330,6 +44080,16 @@
               }
             },
             "description": "Not authenticated"
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeatDenial"
+                }
+              }
+            },
+            "description": "No seat available for a new account under this deployment's license"
           },
           "403": {
             "content": {

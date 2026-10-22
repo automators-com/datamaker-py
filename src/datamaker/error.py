@@ -92,3 +92,24 @@ class ToscaDatasetTooLargeError(DataMakerAPIError):
     @property
     def bytes(self) -> Optional[int]:
         return self._detail("bytes")
+
+
+class ToscaDatasetAppendIncompleteError(DataMakerAPIError):
+    """502: an append stopped part way, so only some rows were added.
+
+    Pushing the same rows again would add the ones already added a second
+    time. Push only the rows at ``not_appended_rows``.
+    """
+
+    @property
+    def dataset_id(self) -> Optional[str]:
+        return self._detail("datasetId")
+
+    @property
+    def appended_rows(self) -> int:
+        return self._detail("appendedRows") or 0
+
+    @property
+    def not_appended_rows(self) -> List[int]:
+        """Positions, in the pushed rows, of the rows that were not added."""
+        return self._detail("notAppendedRows") or []

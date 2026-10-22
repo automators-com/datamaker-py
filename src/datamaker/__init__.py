@@ -4,6 +4,7 @@ from .error import (  # noqa
     DataMakerError,
     DataMakerAPIError,
     ReadOnlyConnectionError,
+    ToscaDatasetAppendIncompleteError,
     ToscaDatasetExistsError,
     ToscaDatasetLockedError,
     ToscaDatasetSchemaChangedError,

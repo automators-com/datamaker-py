@@ -17,13 +17,14 @@ from ..error import (
     DataMakerAPIError,
     DataMakerError,
     ReadOnlyConnectionError,
+    ToscaDatasetAppendIncompleteError,
     ToscaDatasetExistsError,
     ToscaDatasetLockedError,
     ToscaDatasetSchemaChangedError,
     ToscaDatasetTooLargeError,
 )
 
-ON_EXISTING = ("fail", "overwrite", "new")
+ON_EXISTING = ("fail", "overwrite", "new", "append", "sync")
 ON_SCHEMA_CHANGE = ("refuse", "recreate")
 
 
@@ -35,7 +36,7 @@ class ToscaDatasetPushResult:
     name: str
     space: str
     rows_count: int
-    # "created", "overwritten", "recreated" or "copied"
+    # "created", "overwritten", "recreated", "copied", "appended" or "synced"
     outcome: str
     # A ready-to-paste reference, e.g. "{TDM[Orders][Customer]}"
     example: str
@@ -49,6 +50,11 @@ class ToscaDatasetPushResult:
     # Columns a test step cannot read by name because they hold [ or ]. Their
     # data is in the data set; rename them to read it with {TDM[...]}.
     unaddressable_columns: List[str] = field(default_factory=list)
+    # Rows an "append" push added; None for other pushes.
+    appended_rows: Optional[int] = None
+    # What a "sync" push did to the rows: {"appended", "updated", "refreshed",
+    #  "unchanged", "deleted", "keptUsed", "untouched"}; empty otherwise.
+    counts: Dict[str, int] = field(default_factory=dict)
     # The API's response as sent, for fields this class does not name yet.
     raw: ToscaDatasetPush = field(
         default_factory=lambda: cast(ToscaDatasetPush, {}), repr=False, compare=False
@@ -97,7 +103,7 @@ class ToscaClient(BaseClient):
         subsets_by: Optional[Union[str, bool]] = None,
         space: str = "default",
     ) -> ToscaDatasetPushResult:
-        """Create or replace a Tosca Cloud data set from DataMaker rows.
+        """Create, replace or add rows to a Tosca Cloud data set.
 
         Give exactly one source: ``set_id``, ``input_set_id`` (with an optional
         ``version``), ``dataset_id`` or ``rows``.
@@ -118,7 +124,14 @@ class ToscaClient(BaseClient):
                 ``set_id``.
             on_existing: What to do when a data set called ``name`` exists:
                 "fail" (default), "overwrite" (replace its rows, keeping its
-                id and subsets) or "new" (Tosca creates a copy beside it).
+                id and subsets), "new" (Tosca creates a copy beside it),
+                "append" (add the rows and leave every row already there as
+                it is, including rows a test has used; for data tests
+                consume, at most 1,000 rows, and pushing the same rows again
+                adds them again) or "sync" (``input_set_id`` only: bring the
+                data set in line with the input set row by row, never
+                changing a row a test has used). "append" and "sync" create
+                the data set when there is none.
             on_schema_change: On overwrite, when the rows drop a column the
                 data set has: "refuse" (default) or "recreate" (delete and
                 recreate it; test steps keep working, its id and subsets are
@@ -132,8 +145,8 @@ class ToscaClient(BaseClient):
         Returns:
             A ``ToscaDatasetPushResult`` with ``dataset_id``, ``name``,
             ``space``, ``rows_count``, ``outcome``, ``columns``,
-            ``added_columns``, ``subsets``, ``unaddressable_columns`` and
-            ``example``. Names holding ``[`` or ``]`` cannot appear in
+            ``added_columns``, ``subsets``, ``unaddressable_columns``,
+            ``appended_rows`` (append), ``counts`` (sync) and ``example``. Names holding ``[`` or ``]`` cannot appear in
             ``{TDM[...]}``: such columns are listed in
             ``unaddressable_columns`` and such subset values in
             ``subsets["unaddressable"]``.
@@ -143,13 +156,16 @@ class ToscaClient(BaseClient):
             ReadOnlyConnectionError: 403, the connection is read-only.
             ToscaDatasetExistsError: 409, the name is taken and ``on_existing``
                 is "fail". Carries ``dataset_id``.
-            ToscaDatasetLockedError: 409, an overwrite of a data set that is
-                locked in Tosca Cloud. Carries ``dataset_id``.
+            ToscaDatasetLockedError: 409, an overwrite, append or sync of a
+                data set that is locked in Tosca Cloud. Carries ``dataset_id``.
             ToscaDatasetSchemaChangedError: 409, an overwrite would drop
                 columns. Carries ``added_columns`` and ``removed_columns``.
             ToscaDatasetTooLargeError: 413, more rows or bytes than one push
                 allows. Carries ``max_rows`` or ``max_bytes`` when the API
                 sends them.
+            ToscaDatasetAppendIncompleteError: 502, an append stopped part
+                way. Carries ``appended_rows`` and ``not_appended_rows``
+                (positions in ``rows``): push only those again.
             DataMakerAPIError: Any other non-2xx answer, with ``status_code``
                 and ``body``.
 
@@ -199,6 +215,11 @@ class ToscaClient(BaseClient):
             raise DataMakerError("version only applies to input_set_id.")
         if allow_unlocked and set_id is None:
             raise DataMakerError("allow_unlocked only applies to set_id.")
+        if on_existing == "sync" and input_set_id is None:
+            raise DataMakerError(
+                'on_existing="sync" needs input_set_id: only an input set\'s rows '
+                "say which sheet row they came from."
+            )
 
         source: Dict[str, Any]
         if set_id is not None:
@@ -253,6 +274,8 @@ class ToscaClient(BaseClient):
             subsets={"unaddressable": [], **dict(data["subsets"])},
             # Read with .get: an API from before datamaker#3683 omits the key.
             unaddressable_columns=list(data.get("unaddressableColumns") or []),
+            appended_rows=data.get("appendedRows"),
+            counts=dict(data.get("counts") or {}),
             raw=data,
         )
 
@@ -285,4 +308,6 @@ class ToscaClient(BaseClient):
                 return ToscaDatasetLockedError(*args)
         if error.status_code == 413:
             return ToscaDatasetTooLargeError(*args)
+        if error.status_code == 502 and body.get("code") == "appendIncomplete":
+            return ToscaDatasetAppendIncompleteError(*args)
         return error

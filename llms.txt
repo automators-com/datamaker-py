@@ -357,7 +357,7 @@ print(f"Saved set: {result['name']} ({result['rowCount']} rows)")
 ### Tosca Cloud Data Sets
 
 **push_tosca_dataset(integration_id, name, *, set_id=None, input_set_id=None, version=None, dataset_id=None, rows=None, allow_unlocked=False, on_existing="fail", on_schema_change="refuse", subsets_by=None, space="default")**
-Create or replace a native Tosca Cloud data set (Prepare > Test data) from
+Create, replace or add rows to a native Tosca Cloud data set (Prepare > Test data) from
 DataMaker rows. A Tosca test step then reads it with
 `{TDM[<data set>][<subset>][<column>]}`. DataMaker reads the rows and calls
 Tosca with the connection's own credentials, so a scenario never holds them.
@@ -374,7 +374,13 @@ Give exactly one source:
 Options:
 
 - `on_existing`: when the name is taken, `"fail"` (default), `"overwrite"`
-  (replace the rows, same data set id and subsets) or `"new"` (a copy beside it).
+  (replace the rows, same data set id and subsets), `"new"` (a copy beside it),
+  `"append"` or `"sync"`. `"append"` adds the rows and leaves every row already
+  there as it is, including rows a test has used: use it for data tests
+  consume, pushing each run's fresh rows. It takes at most 1,000 rows, and
+  pushing the same rows twice adds them twice. `"sync"` (input sets only)
+  brings the data set in line with the input set row by row without changing
+  a used row. Both create the data set when there is none.
 - `on_schema_change`: on overwrite, when the rows drop a column the data set
   has, `"refuse"` (default) or `"recreate"` (delete and recreate; the id and
   subsets are lost). Added columns are always handled.
@@ -390,7 +396,9 @@ result = dm.push_tosca_dataset(
 )
 result.dataset_id      # "TDS-..."
 result.rows_count      # 42
-result.outcome         # "created" | "overwritten" | "recreated" | "copied"
+result.outcome         # "created" | "overwritten" | "recreated" | "copied" | "appended" | "synced"
+result.appended_rows   # rows an "append" added, else None
+result.counts          # what a "sync" did: {"appended", "updated", "unchanged", "deleted", "keptUsed", ...}
 result.columns         # [{"name": "Customer", "type": "String"}, ...]
 result.added_columns   # columns an overwrite added
 result.subsets         # {"created": [...], "existing": [...], "skipped": 0, "unaddressable": [...]}
@@ -404,13 +412,16 @@ Errors (all subclass `DataMakerAPIError`, which carries `status_code` and `body`
   `DataMakerAPIError` 403 means the caller may not read the source.
 - `ToscaDatasetExistsError` (409): the name is taken and `on_existing` is
   `"fail"`. Carries `dataset_id`.
-- `ToscaDatasetLockedError` (409): an overwrite of a data set that a test run
-  holds locked in Tosca. Carries `dataset_id`; retry once it is unlocked.
+- `ToscaDatasetLockedError` (409): an overwrite, append or sync of a data set
+  that a test run holds locked in Tosca. Carries `dataset_id`; retry once it is unlocked.
 - `ToscaDatasetSchemaChangedError` (409): an overwrite would drop columns.
   Carries `dataset_id`, `added_columns` and `removed_columns`.
 - `ToscaDatasetTooLargeError` (413): too many rows or bytes for one push.
   Carries `max_rows` and `rows`, or `max_bytes` and `bytes`, when the API sends
   them; the message always names the cap.
+- `ToscaDatasetAppendIncompleteError` (502): an append stopped part way.
+  Carries `appended_rows` and `not_appended_rows` (positions in `rows`); push
+  only those rows again, since pushing all of them would add the rest twice.
 - Pushes are rate limited (429), and a refusal from Tosca itself is a 502.
 
 **get_tosca_datasets(integration_id, space=None)**

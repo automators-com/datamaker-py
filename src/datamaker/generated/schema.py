@@ -179,6 +179,10 @@ class CloudLicenseStatus(TypedDict):
     seatsUsed: int | None
     teamId: str | None
     teamName: str | None
+    uncoveredDetail: NotRequired[str | None]
+    uncoveredReason: NotRequired[
+        Literal['never-licensed', 'attach-failed', 'detached'] | None
+    ]
 
 
 class Column(TypedDict):
@@ -611,6 +615,7 @@ class InputSetPull(TypedDict):
 class TestCase(TypedDict):
     externalId: str | None
     id: str
+    lastFailure: InputSetPull | None
     lastPull: InputSetPull | None
     name: str
 
@@ -786,6 +791,11 @@ class License1(TypedDict):
     type: Literal['server', 'desktop']
 
 
+class SeatRefusals(TypedDict):
+    last7Days: int
+    lastAt: str | None
+
+
 class SeatUsage(TypedDict):
     seats: int
     used: int
@@ -801,6 +811,7 @@ class LicenseStatus(TypedDict):
     mode: str
     readOnlyReason: str | None
     required: bool
+    seatRefusals: NotRequired[SeatRefusals]
     seatUsage: SeatUsage | None
 
 
@@ -2228,9 +2239,90 @@ class TemplateReorderResult(TypedDict):
     orderedIds: list[str]
 
 
+class Attribute(TypedDict):
+    actionMode: Literal['Insert', 'Verify', 'Select', 'Buffer']
+    dataType: Literal['String', 'Numeric', 'Boolean', 'Date']
+    module: Literal['request', 'response']
+    path: str
+    pathType: str
+    value: str | None
+
+
+class Header(TypedDict):
+    key: str
+    value: str
+
+
+class PathParameter(TypedDict):
+    name: str
+    value: str
+
+
+class QueryParameter(TypedDict):
+    name: str
+    value: str
+
+
+class ApiMessage(TypedDict):
+    attributes: list[Attribute]
+    body: str
+    endpoint: str
+    headers: list[Header]
+    method: Literal['POST']
+    name: str
+    pathParameters: list[PathParameter]
+    queryParameters: list[QueryParameter]
+    resource: str
+
+
+class Buffer(TypedDict):
+    buffer: str
+    field: str
+    path: str
+
+
+class Connection1(TypedDict):
+    endpoint: str
+    name: str
+    transportType: Literal['Http']
+
+
+class Source1(TypedDict):
+    kind: Literal['set', 'inputSet', 'dataset']
+    name: str
+
+
+class Target(TypedDict):
+    dataSet: str
+    integrationId: str
+    onExisting: Literal['fail', 'overwrite', 'sync']
+    space: str | None
+
+
+class ToscaDatasetPullManifest(TypedDict):
+    apiMessage: ApiMessage
+    buffers: list[Buffer]
+    connection: Connection1
+    generatedAt: str
+    kind: Literal['datamaker.tosca-dataset-pull/v1']
+    notes: list[str]
+    source: Source1
+    target: Target
+
+
 class Column1(TypedDict):
     name: str
     type: str
+
+
+class Counts1(TypedDict):
+    appended: int
+    deleted: int
+    keptUsed: int
+    refreshed: int
+    unchanged: int
+    untouched: int
+    updated: int
 
 
 class Subsets(TypedDict):
@@ -2242,11 +2334,15 @@ class Subsets(TypedDict):
 
 class ToscaDatasetPush(TypedDict):
     addedColumns: list[str]
+    appendedRows: NotRequired[int]
     columns: list[Column1]
+    counts: NotRequired[Counts1]
     datasetId: str
     example: str
     name: str
-    outcome: Literal['created', 'overwritten', 'recreated', 'copied']
+    outcome: Literal[
+        'created', 'overwritten', 'recreated', 'copied', 'appended', 'synced'
+    ]
     rowsCount: int
     space: str
     subsets: Subsets
@@ -2270,7 +2366,7 @@ class ToscaOnPremWorkspaces(TypedDict):
     workspaces: list[str]
 
 
-class Attribute(TypedDict):
+class Attribute1(TypedDict):
     actionMode: Literal['Insert', 'Verify', 'Select', 'Buffer']
     dataType: Literal['String', 'Numeric', 'Boolean', 'Date']
     module: Literal['request', 'response']
@@ -2281,23 +2377,8 @@ class Attribute(TypedDict):
     value: str | None
 
 
-class Header(TypedDict):
-    key: str
-    value: str
-
-
-class PathParameter(TypedDict):
-    name: str
-    value: str
-
-
-class QueryParameter(TypedDict):
-    name: str
-    value: str
-
-
-class ApiMessage(TypedDict):
-    attributes: list[Attribute]
+class ApiMessage1(TypedDict):
+    attributes: list[Attribute1]
     endpoint: str
     headers: list[Header]
     method: Literal['GET']
@@ -2307,16 +2388,10 @@ class ApiMessage(TypedDict):
     resource: str
 
 
-class Buffer(TypedDict):
+class Buffer1(TypedDict):
     buffer: str
     column: str
     path: str
-
-
-class Connection1(TypedDict):
-    endpoint: str
-    name: str
-    transportType: Literal['Http']
 
 
 class TestCase1(TypedDict):
@@ -2324,7 +2399,7 @@ class TestCase1(TypedDict):
     name: str
 
 
-class Source1(TypedDict):
+class Source2(TypedDict):
     inputSetId: str
     inputSetName: str
     rowIndex: int
@@ -2333,13 +2408,13 @@ class Source1(TypedDict):
 
 
 class ToscaSetupManifest(TypedDict):
-    apiMessage: ApiMessage
-    buffers: list[Buffer]
+    apiMessage: ApiMessage1
+    buffers: list[Buffer1]
     connection: Connection1
     generatedAt: str
     kind: Literal['datamaker.tosca-setup/v1']
     notes: list[str]
-    source: Source1
+    source: Source2
 
 
 class ToscaWorkspaces(TypedDict):

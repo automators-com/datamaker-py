@@ -67,13 +67,24 @@ try:
         integration_id,
         name="Orders",
         input_set_id="is_123",        # or set_id=..., dataset_id=..., rows=[...]
-        on_existing="overwrite",      # "fail" (default) | "overwrite" | "new"
+        on_existing="overwrite",      # "fail" (default) | "overwrite" | "new" | "append" | "sync"
     )
     print(result.dataset_id, result.rows_count, result.outcome, result.example)
 except ToscaDatasetSchemaChangedError as e:
     # The rows dropped a column the data set has. Pass on_schema_change="recreate"
     # to delete and recreate it instead.
     print("removed:", e.removed_columns, "added:", e.added_columns)
+```
+
+For test data that tests use up, push each run's fresh rows with `on_existing="append"`.
+The rows are added to the one data set, and the rows already there, including those
+Tosca has marked as used, stay as they are. An append takes up to 1,000 rows and is not
+deduplicated: if one stops part way, `ToscaDatasetAppendIncompleteError.not_appended_rows`
+says which rows to push again.
+
+```python
+result = dm.push_tosca_dataset(integration_id, "Orders", rows=new_orders, on_existing="append")
+print(result.outcome, result.appended_rows, result.rows_count)  # appended 25 140
 ```
 
 An input set gets one Tosca subset per test case by default; `subsets_by` picks another

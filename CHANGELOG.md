@@ -4,6 +4,28 @@
 > when this file was copied, and the 0.3.0-0.9.0 releases were never recorded here.
 > Left as-is rather than reconstructed from memory.
 
+## 0.12.0
+
+### Minor Changes
+
+- `push_tosca_dataset` takes `on_existing="append"`: the rows are added to the data set,
+  and the rows already there, including rows Tosca has marked as used, are left as they
+  are (datamaker#3738). The first append creates the data set. Use it when a scenario
+  feeds fresh rows to tests that consume them; `"overwrite"` replaced the used rows and
+  `"new"` made another data set on every run. `result.appended_rows` says how many rows
+  were added. An append takes up to 1,000 rows, and pushing the same rows again adds them
+  again.
+
+- `ToscaDatasetAppendIncompleteError` (502): an append stopped part way. It carries
+  `appended_rows`, `not_appended_rows` (positions in `rows`, to push again) and
+  `dataset_id`.
+
+- `on_existing="sync"`, which the API already offered for input sets, is no longer
+  refused locally. It needs `input_set_id`. `result.counts` reports what the sync did.
+
+- The generated types are synced to the API at datamaker `f00f29732`: `ToscaDatasetPush`
+  gains `appendedRows` and the `appended` outcome, and `ToscaDatasetPullManifest` is new.
+
 ## 0.11.2
 
 ### Patch Changes
