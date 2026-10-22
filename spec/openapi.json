@@ -758,6 +758,26 @@
               "string",
               "null"
             ]
+          },
+          "uncoveredDetail": {
+            "description": "The outcome behind attach-failed, e.g. allowance-exhausted",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "uncoveredReason": {
+            "description": "Why no entitlement covers this workspace; null when one does",
+            "enum": [
+              "never-licensed",
+              "attach-failed",
+              "detached",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -2557,6 +2577,7 @@
             "type": "string"
           },
           "lastPull": {
+            "description": "The newest read of any test case, failed or not (see `ok`), or null when nothing has read the rows",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/InputSetPull"
@@ -2583,7 +2604,19 @@
                 "id": {
                   "type": "string"
                 },
+                "lastFailure": {
+                  "description": "The newest failed read that named this test case, while no later read naming it has succeeded. A whole-set read neither sets nor clears it",
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/InputSetPull"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "lastPull": {
+                  "description": "The newest successful read that named this test case or read the whole set. A failed read is never a pull",
                   "oneOf": [
                     {
                       "$ref": "#/components/schemas/InputSetPull"
@@ -2601,7 +2634,8 @@
                 "id",
                 "name",
                 "externalId",
-                "lastPull"
+                "lastPull",
+                "lastFailure"
               ],
               "type": "object"
             },
@@ -3429,6 +3463,26 @@
           "required": {
             "description": "Whether this deployment demands a license at all",
             "type": "boolean"
+          },
+          "seatRefusals": {
+            "properties": {
+              "last7Days": {
+                "description": "Signups refused in the trailing 7 days",
+                "type": "integer"
+              },
+              "lastAt": {
+                "description": "ISO-8601 timestamp of the most recent refusal",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "last7Days",
+              "lastAt"
+            ],
+            "type": "object"
           },
           "seatUsage": {
             "properties": {
@@ -24412,9 +24466,31 @@
                             "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                             "type": "integer"
                           },
+                          "claimDomain": {
+                            "description": "Enterprise claim rule: the same, for any address at this domain",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "claimEmail": {
+                            "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "claimIgnored": {
+                            "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                            "type": "boolean"
+                          },
                           "coreSystems": {
                             "description": "Declared core systems; 0 = unlimited",
                             "type": "integer"
+                          },
+                          "created": {
+                            "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                            "type": "boolean"
                           },
                           "createdAt": {
                             "format": "date-time",
@@ -24549,7 +24625,9 @@
                           "revokedBy",
                           "revokeNote",
                           "updatedAt",
-                          "updatedBy"
+                          "updatedBy",
+                          "claimEmail",
+                          "claimDomain"
                         ],
                         "type": "object"
                       },
@@ -24598,7 +24676,7 @@
         ]
       },
       "post": {
-        "description": "Provision a Cloud workspace entitlement from Auth",
+        "description": "Provision a Cloud workspace entitlement from Auth, against a workspace or a claim rule",
         "operationId": "postInternalCloud-licenses",
         "parameters": [],
         "requestBody": {
@@ -24610,6 +24688,18 @@
                     "maximum": 10000000,
                     "minimum": 0,
                     "type": "integer"
+                  },
+                  "claimDomain": {
+                    "description": "Enterprise only: a bare email domain the entitlement waits for. Public mailbox domains are refused",
+                    "maxLength": 253,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "claimEmail": {
+                    "description": "Owner email the entitlement waits for; lowercased server-side",
+                    "format": "email",
+                    "maxLength": 320,
+                    "type": "string"
                   },
                   "coreSystems": {
                     "maximum": 10000,
@@ -24649,13 +24739,13 @@
                     "type": "integer"
                   },
                   "teamId": {
+                    "description": "The workspace to cover. Omit it to issue against a claim rule instead",
                     "maxLength": 256,
                     "minLength": 1,
                     "type": "string"
                   }
                 },
                 "required": [
-                  "teamId",
                   "customerId",
                   "issuedBy"
                 ],
@@ -24681,9 +24771,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -24818,13 +24930,15 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
               }
             },
-            "description": "The matching active entitlement already existed"
+            "description": "The matching live entitlement already existed and nothing was created (`created: false`)"
           },
           "201": {
             "content": {
@@ -24842,9 +24956,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -24979,13 +25115,25 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
               }
             },
-            "description": "Provisioned Cloud workspace entitlement"
+            "description": "Provisioned Cloud workspace entitlement (`created: true`). A claim-only entitlement is created unclaimed, after existing unlicensed workspaces whose owner matches the claim are swept onto it"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "No teamId, claimEmail or claimDomain; a domain claim off the enterprise plan; or a public mailbox domain"
           },
           "401": {
             "content": {
@@ -25015,7 +25163,7 @@
                 }
               }
             },
-            "description": "The DataMaker team does not exist"
+            "description": "The DataMaker team does not exist (`code: team_not_found`)"
           },
           "409": {
             "content": {
@@ -25025,7 +25173,7 @@
                 }
               }
             },
-            "description": "The team already belongs to another customer entitlement"
+            "description": "The team already belongs to another customer entitlement (`code: team_already_covered`), or another customer's live entitlement holds the same claim (`code: claim_conflict`)"
           },
           "503": {
             "content": {
@@ -25624,9 +25772,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -25761,7 +25931,9 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
@@ -25855,9 +26027,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -25992,7 +26186,9 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
@@ -26085,9 +26281,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -26222,7 +26440,9 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
@@ -26351,9 +26571,31 @@
                       "description": "Monthly AI allowance in credits, pooled; 0 = unlimited",
                       "type": "integer"
                     },
+                    "claimDomain": {
+                      "description": "Enterprise claim rule: the same, for any address at this domain",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimEmail": {
+                      "description": "Claim rule: a new workspace whose creator signs up with this address is attached automatically",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "claimIgnored": {
+                      "description": "Provision responses only: true when claimEmail/claimDomain were sent with a teamId but could not be stored (this customer already holds the claim on another row, or the covering row could not take it); the entitlement itself was still issued or returned",
+                      "type": "boolean"
+                    },
                     "coreSystems": {
                       "description": "Declared core systems; 0 = unlimited",
                       "type": "integer"
+                    },
+                    "created": {
+                      "description": "Provision responses only: true when this call created the entitlement, false when an existing one was returned",
+                      "type": "boolean"
                     },
                     "createdAt": {
                       "format": "date-time",
@@ -26488,7 +26730,9 @@
                     "revokedBy",
                     "revokeNote",
                     "updatedAt",
-                    "updatedBy"
+                    "updatedBy",
+                    "claimEmail",
+                    "claimDomain"
                   ],
                   "type": "object"
                 }
@@ -26672,6 +26916,33 @@
                               "type": "object"
                             },
                             "type": "array"
+                          },
+                          "suggestedLicenseIds": {
+                            "description": "Live entitlements whose claimEmail or claimDomain matches the workspace creator's (earliest OWNER's) email; empty when none, and for a covered workspace",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "uncoveredDetail": {
+                            "description": "For attach-failed, the outcome (e.g. allowance-exhausted, license-revoked); for detached, license-revoked when revocation did it",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "uncoveredReason": {
+                            "description": "Why no entitlement covers this workspace; null when one does",
+                            "enum": [
+                              "never-licensed",
+                              "attach-failed",
+                              "detached",
+                              null
+                            ],
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           }
                         },
                         "required": [
@@ -26681,7 +26952,10 @@
                           "memberCount",
                           "cloudLicenseId",
                           "owners",
-                          "owner"
+                          "owner",
+                          "uncoveredReason",
+                          "uncoveredDetail",
+                          "suggestedLicenseIds"
                         ],
                         "type": "object"
                       },
@@ -41876,7 +42150,7 @@
                 }
               }
             },
-            "description": "The team has no seat available under its current license"
+            "description": "No seat available under the license: for an existing account, the team's; for an address with no account on a self-hosted server, the deployment's (`license_seat_limit` / `license_not_valid`)"
           },
           "403": {
             "content": {

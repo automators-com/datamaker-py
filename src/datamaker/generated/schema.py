@@ -179,6 +179,10 @@ class CloudLicenseStatus(TypedDict):
     seatsUsed: int | None
     teamId: str | None
     teamName: str | None
+    uncoveredDetail: NotRequired[str | None]
+    uncoveredReason: NotRequired[
+        Literal['never-licensed', 'attach-failed', 'detached'] | None
+    ]
 
 
 class Column(TypedDict):
@@ -611,6 +615,7 @@ class InputSetPull(TypedDict):
 class TestCase(TypedDict):
     externalId: str | None
     id: str
+    lastFailure: InputSetPull | None
     lastPull: InputSetPull | None
     name: str
 
@@ -786,6 +791,11 @@ class License1(TypedDict):
     type: Literal['server', 'desktop']
 
 
+class SeatRefusals(TypedDict):
+    last7Days: int
+    lastAt: str | None
+
+
 class SeatUsage(TypedDict):
     seats: int
     used: int
@@ -801,6 +811,7 @@ class LicenseStatus(TypedDict):
     mode: str
     readOnlyReason: str | None
     required: bool
+    seatRefusals: NotRequired[SeatRefusals]
     seatUsage: SeatUsage | None
 
 

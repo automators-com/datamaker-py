@@ -23,8 +23,8 @@
 - `on_existing="sync"`, which the API already offered for input sets, is no longer
   refused locally. It needs `input_set_id`. `result.counts` reports what the sync did.
 
-- The generated types are synced to the API: `ToscaDatasetPush` gains `appendedRows` and
-  the `appended` outcome, and `ToscaDatasetPullManifest` is new.
+- The generated types are synced to the API at datamaker `f00f29732`: `ToscaDatasetPush`
+  gains `appendedRows` and the `appended` outcome, and `ToscaDatasetPullManifest` is new.
 
 ## 0.11.2
 
