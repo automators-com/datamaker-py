@@ -166,9 +166,6 @@ Remove a team member.
 **get_users()**
 Get all users.
 
-**create_user(user_data, user_id)**
-Create a new user.
-
 **get_current_user()**
 Get current user information.
 

@@ -4,6 +4,16 @@
 > when this file was copied, and the 0.3.0-0.9.0 releases were never recorded here.
 > Left as-is rather than reconstructed from memory.
 
+## Unreleased
+
+### Breaking Changes
+
+- `create_user` is removed (datamaker#3720). It called `POST /users`, which let any
+  signed-in caller create an account for any email address, so the real person
+  inherited it at their first sign-in and every call spent a seat. The API no longer
+  has the route, so the method could only fail. An account is created when the
+  person signs in; add a colleague to a team by inviting them.
+
 ## 0.12.0
 
 ### Minor Changes
