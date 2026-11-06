@@ -322,36 +322,6 @@ class TestDataMakerIntegration:
         except DataMakerError as e:
             self._handle_api_error(e, "Create/delete team test")
 
-    def test_create_and_delete_user(self, datamaker_client):
-        """Test creating and deleting a user with real API calls."""
-        try:
-            # Create a test user
-            user_data = {
-                "email": "testuser@integrationtest.com",
-                "firstName": "Test",
-                "lastName": "User",
-            }
-
-            # Generate a unique user ID for the test
-            import uuid
-
-            user_id = f"test-user-{uuid.uuid4().hex[:8]}"
-            created_user = datamaker_client.create_user(user_data, user_id)
-            assert created_user is not None
-            assert "id" in created_user
-            user_id = created_user["id"]
-
-            print(f"Created user with ID: {user_id}")
-
-            # Clean up - delete the user
-            delete_result = datamaker_client.delete_user(user_id)
-            assert delete_result is not None
-
-            print(f"Successfully deleted user {user_id}")
-
-        except DataMakerError as e:
-            self._handle_api_error(e, "Create/delete user test")
-
     def test_create_and_delete_connection(self, datamaker_client):
         """Test creating and deleting a connection with real API calls."""
         try:

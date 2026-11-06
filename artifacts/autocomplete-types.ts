@@ -237,14 +237,6 @@ export const METHOD_SUGGESTIONS: DataMakerMethod[] = [
     sortText: "get_users",
   },
   {
-    label: "create_user",
-    kind: CompletionItemKind.Method,
-    insertText: "create_user(${1:user_data}: Dict, ${2:user_id}: str)",
-    documentation: "Create a new user.",
-    detail: "Method: create_user",
-    sortText: "create_user",
-  },
-  {
     label: "get_current_user",
     kind: CompletionItemKind.Method,
     insertText: "get_current_user()",

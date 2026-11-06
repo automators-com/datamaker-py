@@ -243,10 +243,6 @@ class DataMaker:
         """Get all users."""
         return self._users.get_users()
 
-    def create_user(self, user_data: Dict, user_id: str):
-        """Create a new user."""
-        return self._users.create_user(user_data, user_id)
-
     def get_current_user(self):
         """Get current user information."""
         return self._users.get_current_user()
